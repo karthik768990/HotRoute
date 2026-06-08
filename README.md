@@ -225,6 +225,82 @@ src/
 └── types/
 ```
 
+
+# Future Scalable Architecture
+
+```mermaid
+flowchart TB
+
+    User[User]
+
+    subgraph Frontend
+        Dashboard[Next.js Dashboard]
+    end
+
+    subgraph APIGateway
+        Gateway[API Gateway]
+    end
+
+    subgraph Services
+        AuthService[Auth Service]
+        ProjectService[Project Service]
+        MonitoringService[Monitoring Service]
+        NotificationService[Notification Service]
+    end
+
+    subgraph Messaging
+        Queue[Redis / Message Queue]
+    end
+
+    subgraph Workers
+        PingWorker1[Ping Worker]
+        PingWorker2[Ping Worker]
+        PingWorkerN[Ping Worker N]
+    end
+
+    subgraph DataLayer
+        PostgreSQL[(PostgreSQL)]
+        Redis[(Redis Cache)]
+    end
+
+    subgraph External
+        Websites[Target Websites]
+        Email[Email Provider]
+        Discord[Discord Webhooks]
+    end
+
+    User --> Dashboard
+    Dashboard --> Gateway
+
+    Gateway --> AuthService
+    Gateway --> ProjectService
+    Gateway --> MonitoringService
+
+    AuthService --> PostgreSQL
+    ProjectService --> PostgreSQL
+
+    MonitoringService --> Queue
+
+    Queue --> PingWorker1
+    Queue --> PingWorker2
+    Queue --> PingWorkerN
+
+    PingWorker1 --> Websites
+    PingWorker2 --> Websites
+    PingWorkerN --> Websites
+
+    PingWorker1 --> PostgreSQL
+    PingWorker2 --> PostgreSQL
+    PingWorkerN --> PostgreSQL
+
+    MonitoringService --> NotificationService
+
+    NotificationService --> Email
+    NotificationService --> Discord
+
+    MonitoringService --> Redis
+```
+
 ---
 
 # Roadmap
