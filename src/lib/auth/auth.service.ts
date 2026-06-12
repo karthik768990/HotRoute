@@ -4,7 +4,7 @@
 import prisma from "../prisma";
 import { generateJWTToken } from "./jwt";
 import { hashPassword, verifyPassword } from "./password";
-import { generateVerificationToken } from "./token";
+import { generatePasswordResetToken, generateVerificationToken } from "./token";
 
 
 interface RegisterUserInput {
@@ -50,7 +50,25 @@ interface ResendVerificationResponse {
 }
 
 
+interface ForgotPasswordInput {
+    email: string
+}
 
+interface ForgotPasswordResponse {
+    success: boolean
+}
+
+
+interface ResetPasswordInput {
+    token: string,
+    newPassword: string
+
+}
+
+
+interface ResetPasswordResponse {
+    success: boolean
+}
 
 
 export async function registerUser({
@@ -113,7 +131,7 @@ export async function loginUser({ email, password }: LoginUserInput): Promise<Lo
         },
     })
     if (!existingUser) {
-        throw new Error("User does not exist")
+        throw new Error("Invalid credentials")
     }
     const isEqual = await verifyPassword(password, existingUser?.password || '')
     if (!isEqual) {
@@ -251,3 +269,120 @@ export async function resendVerificationEmail({ email }: ResendVerificationInput
 // throw new CooldownError()
 
 // TODO: forgotPassword() resetPassword() auth.service tests email-service integration 
+export async function forgotPassword({
+    email
+}: ForgotPasswordInput): Promise<ForgotPasswordResponse> {
+
+    email = email.trim().toLowerCase()
+
+    const existingUser = await prisma.user.findUnique({
+        where: {
+            email
+        }
+    })
+
+    if (!existingUser) {
+        return {
+            success: true
+        }
+    }
+
+    const latestToken = await prisma.passwordResetToken.findFirst({
+        where: {
+            userId: existingUser.id
+        },
+        orderBy: {
+            createdAt: "desc"
+        }
+    })
+
+    const fiveMinutes = 5 * 60 * 1000
+
+    if (
+        latestToken &&
+        Date.now() - latestToken.createdAt.getTime() < fiveMinutes
+    ) {
+        throw new Error(
+            "Please wait before requesting another password reset email"
+        )
+    }
+
+    await prisma.passwordResetToken.deleteMany({
+        where: {
+            userId: existingUser.id
+        }
+    })
+
+    const token = generatePasswordResetToken()
+
+    await prisma.passwordResetToken.create({
+        data: {
+            token,
+            userId: existingUser.id,
+            expiresAt: new Date(
+                Date.now() + 1000 * 60 * 60 * 24
+            )
+        }
+    })
+
+    // TODO:
+    // await sendPasswordResetEmail(
+    //     existingUser.email,
+    //     token
+    // )
+
+    return {
+        success: true
+    }
+}
+
+export async function resetPassword({
+    token,
+    newPassword
+}: ResetPasswordInput): Promise<ResetPasswordResponse> {
+
+
+    const existingToken = await prisma.passwordResetToken.findFirst({
+        where: { token },
+    })
+
+    if (!existingToken) {
+        throw new Error("The token is invalid")
+
+    }
+
+    const expiryTime = existingToken.expiresAt
+    const isValid = expiryTime > (new Date())
+    if (!isValid) {
+        throw new Error("The token has expired")
+    }
+    const newHashedPassword = await hashPassword(newPassword)
+    
+    const existingUserId = existingToken.userId
+    if (!existingUserId) {
+        throw new Error("Corresponding user does not found")
+    }
+     
+    await prisma.user.update({
+        where:{
+            id:existingUserId
+        },
+        data:{
+            password: newHashedPassword
+        }
+    })
+   
+    await prisma.passwordResetToken.delete({
+        where:{
+            token:token
+        }
+    })
+
+    return {
+        success: true
+    }
+
+}
+
+
+

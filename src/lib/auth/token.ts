@@ -6,6 +6,11 @@ function generateVerificationToken():string{
     return token;
 }
 
+function generatePasswordResetToken():string{
+    const token = uuidv4()
+    return token;
+}
+
 function generateExpiry(hours: number, currentTime: Date): Date {
 
     const futureTime = new Date(currentTime);
@@ -23,4 +28,4 @@ function  isTokenExpired(expiresAt:Date): boolean{
 }
 
 
-export {generateVerificationToken,generateExpiry,isTokenExpired}
+export {generateVerificationToken,generateExpiry,isTokenExpired,generatePasswordResetToken}
