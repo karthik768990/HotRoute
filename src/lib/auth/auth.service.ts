@@ -1,6 +1,7 @@
 
 
 
+import { sendPasswordResetEmail, sendVerificationEmail } from "../email/email.service";
 import prisma from "../prisma";
 import { generateJWTToken } from "./jwt";
 import { hashPassword, verifyPassword } from "./password";
@@ -109,8 +110,10 @@ export async function registerUser({
             expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24)
         }
     })
-    // TODO add the email sending after a while 
-
+    
+    await sendVerificationEmail({
+        email: user.email,token
+    })
 
     return {
         id: user.id,
@@ -249,11 +252,11 @@ export async function resendVerificationEmail({ email }: ResendVerificationInput
         }
     })
 
-    // TODO:
-    // await sendVerificationEmail(
-    //     existingUser.email,
-    //     token
-    // )
+    
+    await sendVerificationEmail({
+        email: existingUser.email,
+        token
+    })
 
     return {
         success: true
@@ -325,11 +328,10 @@ export async function forgotPassword({
         }
     })
 
-    // TODO:
-    // await sendPasswordResetEmail(
-    //     existingUser.email,
-    //     token
-    // )
+    await sendPasswordResetEmail({
+        email: existingUser.email,
+        token
+    })
 
     return {
         success: true
