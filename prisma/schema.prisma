@@ -24,7 +24,7 @@ model Project {
   id         String    @id @default(cuid())
   name       String
   url        String
-  interval   Int
+  interval   Int  //interval is considered as minutes
   active     Boolean   @default(true)
   lastPingAt DateTime?
   userId     String
