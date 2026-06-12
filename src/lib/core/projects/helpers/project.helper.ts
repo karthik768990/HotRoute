@@ -39,7 +39,7 @@ export function validateProjectName(projectName: string) {
     
 }
 
-export function validateProjectURL(projectURL: string) {
+export function validateProjectURL(projectURL: string):string {
     projectURL = projectURL.trim();
 
     // 1. Empty URL
@@ -61,8 +61,7 @@ export function validateProjectURL(projectURL: string) {
             "Only HTTP and HTTPS URLs are allowed"
         );
     }
-
-    projectURL = parsedURL.toString();
+    return parsedURL.toString()
 }
 
 
@@ -72,5 +71,4 @@ export function validateUnsafeMonitoring(projectURL: string) {
     if (!isValid) {
         throw new UnsafeMonitoringTargetError('Project url should neither be localhost nor private ip addresses nor metadata endpoints')
     }
-    projectURL = parsedURL.toString()
 }

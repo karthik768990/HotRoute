@@ -2,10 +2,10 @@ import { validateExistingUser,validateUserVerification } from "./helpers/userval
 import { validateProjectName,validateInterval,validateProjectURL,validateUnsafeMonitoring } from "./helpers/project.helper";
 import { CreateProjectInput } from "./project.types";
 export async function validateCreateProjectInput({userId,name,url,interval}: CreateProjectInput):Promise<CreateProjectInput>{    
-    await validateExistingUser(userId);
-    await validateUserVerification(userId)
+    // await validateExistingUser(userId);
+    // await validateUserVerification(userId)
     validateProjectName(name)
-    validateProjectURL(url)
+    url = validateProjectURL(url)
     validateUnsafeMonitoring(url)
     validateInterval(interval)
     return {
