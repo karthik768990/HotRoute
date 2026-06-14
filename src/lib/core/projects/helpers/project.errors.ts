@@ -77,3 +77,11 @@ export class ProjectNotFoundError extends Error{
         this.name= 'ProjectNotFoundError'
     }
 }
+
+
+export class DuplicateProjectError extends Error{
+    constructor(message:string){
+        super(message)
+        this.name  = 'DuplicateProjectError'
+    }
+}

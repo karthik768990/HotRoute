@@ -32,6 +32,7 @@ model Project {
   updatedAt  DateTime  @updatedAt
   pingLogs   PingLog[]
   user       User      @relation(fields: [userId], references: [id],onDelete:Cascade)
+  @@unique([userId,url])
 }
 
 model PingLog {

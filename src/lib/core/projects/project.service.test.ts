@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { CreateProjectInput } from "./project.types";
 import { createProject, deleteProject, getProjectById, listProjects, updateProject } from "./project.service";
-import { InvalidIntervalError, InvalidProjectNameError, InvalidProjectUrlError, ProjectNotFoundError, UnauthorizedProjectAccessError, UnsafeMonitoringTargetError, UserNotFoundError, UserNotVerifiedError } from "./helpers/project.errors";
+import { DuplicateProjectError, InvalidIntervalError, InvalidProjectNameError, InvalidProjectUrlError, ProjectNotFoundError, UnauthorizedProjectAccessError, UnsafeMonitoringTargetError, UserNotFoundError, UserNotVerifiedError } from "./helpers/project.errors";
 import "dotenv/config"
 import { Project, User } from "../../../generated/prisma/browser"
 import prisma from "../../prisma";
@@ -10,7 +10,16 @@ console.log("DATABASE url " + process.env.DATABASE_URL)
 
 let userId: string
 let verifiedUser: User;
-beforeAll(async () => {
+
+    
+    afterEach(async () => {
+    await prisma.project.deleteMany({
+        where: {
+            userId
+        }
+    });
+});
+beforeEach(async () => {
     const user = await prisma.user.create({
         data: {
             username: "project-test-user",
@@ -46,7 +55,10 @@ beforeAll(async () => {
 });
 
 describe('createProject()', () => {
+
+    
     //url validation
+
     describe("URL Validation", () => {
 
         it("should throw InvalidProjectUrlError for empty url", async () => {
@@ -334,6 +346,59 @@ describe('createProject()', () => {
                 }
             });
         })
+
+
+
+    })
+    describe('duplicate project insertion validation ', () => {
+
+        //prevention of duplicate project creation 
+        it("should reject duplicate url for the same user", async () => {
+
+            const input: CreateProjectInput = {
+                userId: userId,
+                name: "Valid Project",
+                url: "https://googles.com",
+                interval: 5
+            };
+            await createProject(input)
+            const input2: CreateProjectInput = {
+                userId: userId,
+                name: "Fake user Project",
+                url: "https://googles.com",
+                interval: 10
+            };
+
+            await expect(createProject(input2)).rejects.toThrow(DuplicateProjectError)
+
+        })
+        it("should reject duplicate url for the same user", async () => {
+
+            const input: CreateProjectInput = {
+                userId,
+                name: "Valid Project",
+                url: "https://google.com",
+                interval: 5
+            };
+
+            await createProject(input);
+
+            const input2: CreateProjectInput = {
+                userId,
+                name: "Duplicate Project",
+                url: "https://google.com",
+                interval: 10
+            };
+
+            await expect(
+                createProject(input2)
+            ).rejects.toThrow(DuplicateProjectError);
+
+        });
+
+
+
+
     })
 
 })
@@ -498,6 +563,88 @@ describe('updateProject()', () => {
             })
         ).rejects.toThrow();
     })
+
+    it("should reject updating url to existing url", async () => {
+
+        const project1 = await createProject({
+            userId,
+            name: "Project One",
+            url: "https://google.com",
+            interval: 5
+        });
+
+        const project2 = await createProject({
+            userId,
+            name: "Project Two",
+            url: "https://github.com",
+            interval: 5
+        });
+
+        await expect(
+            updateProject({
+                projectId: project2.id,
+                userId,
+                url: "https://google.com"
+            })
+        ).rejects.toThrow(DuplicateProjectError);
+
+    });
+
+    it("should allow updating project without changing url", async () => {
+
+        const project = await createProject({
+            userId,
+            name: "Original Project",
+            url: "https://google.com",
+            interval: 5
+        });
+
+        const result = await updateProject({
+            projectId: project.id,
+            userId,
+            name: "Updated Name"
+        });
+
+        expect(result.name).toBe("Updated Name");
+        expect(result.url).toBe("https://google.com/");
+
+    });
+
+
+    it("should allow duplicate urls for different users", async () => {
+
+        const anotherUser = await prisma.user.create({
+            data: {
+                username: "Another User",
+                email: `another-${Date.now()}@test.com`,
+                password: "hashed-password",
+                verifiedAt: new Date()
+            }
+        });
+
+        await createProject({
+            userId,
+            name: "Project One",
+            url: "https://google.com",
+            interval: 5
+        });
+
+        const result = await createProject({
+            userId: anotherUser.id,
+            name: "Project Two",
+            url: "https://google.com",
+            interval: 5
+        });
+
+        expect(result.userId).toBe(anotherUser.id);
+
+        await prisma.user.delete({
+            where: {
+                id: anotherUser.id
+            }
+        });
+    });
+
     afterEach(async () => {
         await prisma.project.delete({
             where: {
@@ -875,7 +1022,7 @@ describe("deletedProject()", () => {
 
 
 
-afterAll(async () => {
+afterEach(async () => {
     console.log("Deleting user:", userId);
 
     const user = await prisma.user.findUnique({
@@ -891,4 +1038,10 @@ afterAll(async () => {
     await prisma.user.deleteMany({
         where: { id: userId }
     });
+
+    await prisma.user.deleteMany({
+        where:{
+            id: verifiedUser.id
+        }
+    })
 });

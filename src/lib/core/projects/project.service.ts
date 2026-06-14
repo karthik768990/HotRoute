@@ -2,7 +2,7 @@ import { CreateProjectInput, DeleteProjectInput, GetProjectByIdInput, ListProjec
 import { Project } from "../../../generated/prisma/browser"
 import prisma from "../../prisma"
 import { validateCreateProjectInput } from "./project.validation";
-import { ProjectNotFoundError, UnauthorizedProjectAccessError, UserNotFoundError, UserNotVerifiedError } from "./helpers/project.errors";
+import { DuplicateProjectError, ProjectNotFoundError, UnauthorizedProjectAccessError, UserNotFoundError, UserNotVerifiedError } from "./helpers/project.errors";
 import { validateUser } from "./userValidation";
 import { validateProjectName, validateInterval, validateProjectURL, validateUnsafeMonitoring } from "./helpers/project.helper";
 
@@ -17,6 +17,15 @@ export async function createProject({
     const validatedInput = validateCreateProjectInput({ userId, name, url, interval })
     await validateUser(validatedInput.userId)
 
+    const existingProject = await prisma.project.findFirst({
+        where: {
+            userId: validatedInput.userId,
+            url: validatedInput.url
+        }
+    })
+    if (existingProject) {
+        throw new DuplicateProjectError("A project with this url already exists")
+    }
     const project = await prisma.project.create({
         data: {
             userId: validatedInput.userId,
@@ -79,6 +88,19 @@ export async function updateProject({
     if (url !== undefined) {
         validateProjectURL(url)
         validateUnsafeMonitoring(url)
+
+        const duplicateProject = await prisma.project.findFirst({
+            where: {
+                userId: userId,
+                url: url,
+                NOT: { id: projectId }
+
+            }
+        })
+
+        if(duplicateProject){
+            throw new DuplicateProjectError("A project with this url already exists")
+        }
         updateData.url = url
     }
 
@@ -100,46 +122,46 @@ export async function updateProject({
 
 
 
-export async function getProjectById({userId,projectId}:GetProjectByIdInput):Promise<Project>{
+export async function getProjectById({ userId, projectId }: GetProjectByIdInput): Promise<Project> {
     await validateUser(userId)
-    const project = await prisma.project.findUnique({where:{id:projectId}})
-    if(!project){
-        throw new ProjectNotFoundError("Project not found") 
+    const project = await prisma.project.findUnique({ where: { id: projectId } })
+    if (!project) {
+        throw new ProjectNotFoundError("Project not found")
     }
-    if(project.userId!== userId){
+    if (project.userId !== userId) {
         throw new UnauthorizedProjectAccessError('The requested project does not belong to you')
     }
     return project
 }
 
-export async function listProjects({userId}:ListProjectsInput):Promise<Array<Project>> {
+export async function listProjects({ userId }: ListProjectsInput): Promise<Array<Project>> {
     await validateUser(userId)
     const projects = await prisma.project.findMany({
-        where:{
-            userId:userId
+        where: {
+            userId: userId
         },
-        orderBy:{
-            createdAt:'desc'
+        orderBy: {
+            createdAt: 'desc'
         }
     })
     return projects
-    
+
 }
 
-export async function deleteProject({userId,projectId}:DeleteProjectInput):Promise<Project>{
+export async function deleteProject({ userId, projectId }: DeleteProjectInput): Promise<Project> {
     await validateUser(userId)
     const project = await prisma.project.findUnique({
-        where:{
-            id:projectId
+        where: {
+            id: projectId
         }
     })
-    if(!project)throw new ProjectNotFoundError("Project not found ")
+    if (!project) throw new ProjectNotFoundError("Project not found ")
 
-    if(project.userId !== userId) throw new UnauthorizedProjectAccessError("Access to other's projects not allowed")    
+    if (project.userId !== userId) throw new UnauthorizedProjectAccessError("Access to other's projects not allowed")
 
-        await prisma.project.delete({
-            where:{id:projectId}
-        })
-        return project
-    }
+    await prisma.project.delete({
+        where: { id: projectId }
+    })
+    return project
+}
 
