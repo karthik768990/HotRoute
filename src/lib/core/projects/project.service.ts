@@ -1,8 +1,8 @@
-import { CreateProjectInput, UpdateProjectInput } from "./project.types";
+import { CreateProjectInput, DeleteProjectInput, GetProjectByIdInput, ListProjectsInput, UpdateProjectInput } from "./project.types";
 import { Project } from "../../../generated/prisma/browser"
 import prisma from "../../prisma"
 import { validateCreateProjectInput } from "./project.validation";
-import { UnauthorizedProjectAccessError, UserNotFoundError, UserNotVerifiedError } from "./helpers/project.errors";
+import { ProjectNotFoundError, UnauthorizedProjectAccessError, UserNotFoundError, UserNotVerifiedError } from "./helpers/project.errors";
 import { validateUser } from "./userValidation";
 import { validateProjectName, validateInterval, validateProjectURL, validateUnsafeMonitoring } from "./helpers/project.helper";
 
@@ -31,9 +31,6 @@ export async function createProject({
 
 
 
-// getProjectById()
-// listProjects()
-// deleteProject()
 
 
 
@@ -98,3 +95,51 @@ export async function updateProject({
     })
 
 }
+
+
+
+
+
+export async function getProjectById({userId,projectId}:GetProjectByIdInput):Promise<Project>{
+    await validateUser(userId)
+    const project = await prisma.project.findUnique({where:{id:projectId}})
+    if(!project){
+        throw new ProjectNotFoundError("Project not found") 
+    }
+    if(project.userId!== userId){
+        throw new UnauthorizedProjectAccessError('The requested project does not belong to you')
+    }
+    return project
+}
+
+export async function listProjects({userId}:ListProjectsInput):Promise<Array<Project>> {
+    await validateUser(userId)
+    const projects = await prisma.project.findMany({
+        where:{
+            userId:userId
+        },
+        orderBy:{
+            createdAt:'desc'
+        }
+    })
+    return projects
+    
+}
+
+export async function deleteProject({userId,projectId}:DeleteProjectInput):Promise<Project>{
+    await validateUser(userId)
+    const project = await prisma.project.findUnique({
+        where:{
+            id:projectId
+        }
+    })
+    if(!project)throw new ProjectNotFoundError("Project not found ")
+
+    if(project.userId !== userId) throw new UnauthorizedProjectAccessError("Access to other's projects not allowed")    
+
+        await prisma.project.delete({
+            where:{id:projectId}
+        })
+        return project
+    }
+

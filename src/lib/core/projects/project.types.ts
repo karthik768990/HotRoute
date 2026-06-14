@@ -15,3 +15,17 @@ export interface UpdateProjectInput{
     active?: boolean
 }
 
+
+export interface GetProjectByIdInput{
+    userId:string,
+    projectId:string
+}
+
+export interface ListProjectsInput{
+    userId:string
+}
+
+export interface DeleteProjectInput{
+    userId:string,
+    projectId:string
+}

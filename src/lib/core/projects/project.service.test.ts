@@ -1,14 +1,15 @@
-import { afterAll,beforeEach ,afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { CreateProjectInput } from "./project.types";
-import { createProject, updateProject } from "./project.service";
-import { InvalidProjectUrlError, UnauthorizedProjectAccessError, UnsafeMonitoringTargetError, UserNotFoundError, UserNotVerifiedError } from "./helpers/project.errors";
+import { createProject, deleteProject, getProjectById, listProjects, updateProject } from "./project.service";
+import { InvalidIntervalError, InvalidProjectNameError, InvalidProjectUrlError, ProjectNotFoundError, UnauthorizedProjectAccessError, UnsafeMonitoringTargetError, UserNotFoundError, UserNotVerifiedError } from "./helpers/project.errors";
 import "dotenv/config"
-import { Project } from "../../../generated/prisma/browser"
+import { Project, User } from "../../../generated/prisma/browser"
 import prisma from "../../prisma";
 
 console.log("DATABASE url " + process.env.DATABASE_URL)
 
 let userId: string
+let verifiedUser: User;
 beforeAll(async () => {
     const user = await prisma.user.create({
         data: {
@@ -17,7 +18,19 @@ beforeAll(async () => {
             password: "hashed-password",
             verifiedAt: new Date()
         }
+
+
+
     });
+    const verifieduser = await prisma.user.create({
+        data: {
+            username: "Another User",
+            email: `another-${Date.now()}@test.com`,
+            password: "hashed-password",
+            verifiedAt: new Date()
+        }
+    });
+    verifiedUser = verifieduser
 
     userId = user.id;
 
@@ -235,7 +248,7 @@ describe('createProject()', () => {
 
             await expect(createProject(input))
                 .rejects
-                .toThrow();
+                .toThrow(InvalidProjectNameError);
         })
         it('should throw error for white space name', async () => {
             const input: CreateProjectInput = {
@@ -247,7 +260,7 @@ describe('createProject()', () => {
 
             await expect(createProject(input))
                 .rejects
-                .toThrow();
+                .toThrow(InvalidProjectNameError);
         })
 
     })
@@ -264,7 +277,7 @@ describe('createProject()', () => {
 
             await expect(createProject(input))
                 .rejects
-                .toThrow();
+                .toThrow(InvalidIntervalError);
 
         })
 
@@ -278,7 +291,7 @@ describe('createProject()', () => {
 
             await expect(createProject(input))
                 .rejects
-                .toThrow();
+                .toThrow(InvalidIntervalError);
         })
         //user validation
 
@@ -328,15 +341,15 @@ describe('createProject()', () => {
 
 let project: Project;
 describe('updateProject()', () => {
-    beforeEach(async()=>{
-    project = await prisma.project.create({
-        data: {
-            userId,
-            name: "Original Project",
-            url: "https://google.com",
-            interval: 5
-        }
-    });
+    beforeEach(async () => {
+        project = await prisma.project.create({
+            data: {
+                userId,
+                name: "Original Project",
+                url: "https://google.com",
+                interval: 5
+            }
+        });
     })
 
     it('should update project name', async () => {
@@ -415,7 +428,7 @@ describe('updateProject()', () => {
                 userId,
                 interval: -5
             })
-        ).rejects.toThrow();
+        ).rejects.toThrow(InvalidIntervalError);
 
 
     })
@@ -428,7 +441,7 @@ describe('updateProject()', () => {
                 userId,
                 name: ""
             })
-        ).rejects.toThrow();
+        ).rejects.toThrow(InvalidProjectNameError);
     })
 
 
@@ -439,7 +452,7 @@ describe('updateProject()', () => {
                 userId,
                 url: "ftp://google.com"
             })
-        ).rejects.toThrow();
+        ).rejects.toThrow(InvalidProjectUrlError);
     })
 
     it('should reject localhost url', async () => {
@@ -476,7 +489,7 @@ describe('updateProject()', () => {
         });
     })
 
-    it('should throw when project does not exist ',async()=>{
+    it('should throw when project does not exist ', async () => {
         await expect(
             updateProject({
                 projectId: "fake-project-id",
@@ -485,14 +498,381 @@ describe('updateProject()', () => {
             })
         ).rejects.toThrow();
     })
-    afterEach(async()=>{
+    afterEach(async () => {
         await prisma.project.delete({
-        where:{
-            id:project.id
-        }
+            where: {
+                id: project.id
+            }
+        })
     })
 })
+
+
+
+
+
+describe("getProjectById()", () => {
+
+    it("should return owned project", async () => {
+        const project = await prisma.project.create({
+            data: {
+                userId,
+                name: "Lookup Project",
+                url: "https://google.com",
+                interval: 5
+            }
+        });
+
+        const result = await getProjectById({
+            userId,
+            projectId: project.id
+        });
+
+        expect(result.id).toBe(project.id);
+        expect(result.userId).toBe(userId);
+
+        await prisma.project.delete({
+            where: {
+                id: project.id
+            }
+        });
+
+
+    })
+
+    it("should throw ProjectNotFoundError", async () => {
+        await expect(
+            getProjectById({
+                userId,
+                projectId: crypto.randomUUID()
+            })
+        ).rejects.toThrow(ProjectNotFoundError);
+    });
+
+    it("should throw UnauthorizedProjectAccessError", async () => {
+        const project = await prisma.project.create({
+            data: {
+                userId,
+                name: "Private Project",
+                url: "https://google.com",
+                interval: 5
+            }
+        });
+
+        const anotherUser = await prisma.user.create({
+            data: {
+                username: "Another User",
+                email: `another-${Date.now()}@test.com`,
+                password: "hashed-password",
+                verifiedAt: new Date()
+            }
+        });
+
+        await expect(
+            getProjectById({
+                userId: anotherUser.id,
+                projectId: project.id
+            })
+        ).rejects.toThrow(UnauthorizedProjectAccessError);
+
+        await prisma.project.delete({
+            where: {
+                id: project.id
+            }
+        });
+
+        await prisma.user.delete({
+            where: {
+                id: anotherUser.id
+            }
+        });
+    });
+
+    it("should throw UserNotFoundError", async () => {
+        await expect(
+            getProjectById({
+                userId: crypto.randomUUID(),
+                projectId: crypto.randomUUID()
+            })
+        ).rejects.toThrow(UserNotFoundError);
+    });
+
+
+
+    it("should throw UserNotVerifiedError", async () => {
+        const unverifiedUser = await prisma.user.create({
+            data: {
+                username: "Unverified User",
+                email: `unverified-${Date.now()}@test.com`,
+                password: "hashed-password",
+                verifiedAt: null
+            }
+        });
+
+        await expect(
+            getProjectById({
+                userId: unverifiedUser.id,
+                projectId: crypto.randomUUID()
+            })
+        ).rejects.toThrow(UserNotVerifiedError);
+
+        await prisma.user.delete({
+            where: {
+                id: unverifiedUser.id
+            }
+        });
+    });
 })
+
+
+describe('listprojects()', () => {
+    it("should return all user projects", async () => {
+        const project1 = await prisma.project.create({
+            data: {
+                userId,
+                name: "Project One",
+                url: "https://one.com",
+                interval: 5
+            }
+        });
+
+        const project2 = await prisma.project.create({
+            data: {
+                userId,
+                name: "Project Two",
+                url: "https://two.com",
+                interval: 5
+            }
+        });
+
+        const projects = await listProjects({ userId });
+
+        expect(projects.length).toBeGreaterThanOrEqual(2);
+
+        await prisma.project.deleteMany({
+            where: {
+                id: {
+                    in: [project1.id, project2.id]
+                }
+            }
+        });
+    });
+
+    it("should return empty array when no projects exist", async () => {
+        const emptyUser = await prisma.user.create({
+            data: {
+                username: "Empty User",
+                email: `empty-${Date.now()}@test.com`,
+                password: "hashed-password",
+                verifiedAt: new Date()
+            }
+        });
+
+        const projects = await listProjects({
+            userId: emptyUser.id
+        });
+
+        expect(projects).toEqual([]);
+
+        await prisma.user.delete({
+            where: {
+                id: emptyUser.id
+            }
+        });
+    });
+
+    it("should return newest projects first", async () => {
+        const olderProject = await prisma.project.create({
+            data: {
+                userId,
+                name: "Older",
+                url: "https://older.com",
+                interval: 5
+            }
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const newerProject = await prisma.project.create({
+            data: {
+                userId,
+                name: "Newer",
+                url: "https://newer.com",
+                interval: 5
+            }
+        });
+
+        const projects = await listProjects({ userId });
+
+        expect(projects[0].id).toBe(newerProject.id);
+
+        await prisma.project.deleteMany({
+            where: {
+                id: {
+                    in: [olderProject.id, newerProject.id]
+                }
+            }
+        });
+    });
+
+
+    it("should throw UserNotFoundError", async () => {
+        await expect(
+            listProjects({
+                userId: crypto.randomUUID()
+            })
+        ).rejects.toThrow(UserNotFoundError);
+    });
+
+
+    it("should throw UserNotVerifiedError", async () => {
+        const unverifiedUser = await prisma.user.create({
+            data: {
+                username: "Unverified",
+                email: `unverified-${Date.now()}@test.com`,
+                password: "hashed-password",
+                verifiedAt: null
+            }
+        });
+
+        await expect(
+            listProjects({
+                userId: unverifiedUser.id
+            })
+        ).rejects.toThrow(UserNotVerifiedError);
+
+        await prisma.user.delete({
+            where: {
+                id: unverifiedUser.id
+            }
+        });
+    });
+
+
+
+
+})
+
+
+
+
+
+describe("deletedProject()", () => {
+    it("should delete owned project", async () => {
+        const project = await prisma.project.create({
+            data: {
+                userId,
+                name: "Delete Me",
+                url: "https://google.com",
+                interval: 5
+            }
+        });
+
+        await deleteProject({
+            userId,
+            projectId: project.id
+        });
+
+        const deletedProject = await prisma.project.findUnique({
+            where: {
+                id: project.id
+            }
+        });
+
+        expect(deletedProject).toBeNull();
+    });
+
+    it("should throw ProjectNotFoundError", async () => {
+        await expect(
+            deleteProject({
+                userId,
+                projectId: crypto.randomUUID()
+            })
+        ).rejects.toThrow(ProjectNotFoundError);
+    });
+
+    it("should throw UnauthorizedProjectAccessError", async () => {
+        const project = await prisma.project.create({
+            data: {
+                userId,
+                name: "Protected Project",
+                url: "https://google.com",
+                interval: 5
+            }
+        });
+
+        const anotherUser = await prisma.user.create({
+            data: {
+                username: "Another User",
+                email: `another-${Date.now()}@test.com`,
+                password: "hashed-password",
+                verifiedAt: new Date()
+            }
+        });
+
+        await expect(
+            deleteProject({
+                userId: anotherUser.id,
+                projectId: project.id
+            })
+        ).rejects.toThrow(UnauthorizedProjectAccessError);
+
+        await prisma.project.delete({
+            where: {
+                id: project.id
+            }
+        });
+
+        await prisma.user.delete({
+            where: {
+                id: anotherUser.id
+            }
+        });
+    });
+
+
+    it("should throw UserNotFoundError", async () => {
+        await expect(
+            deleteProject({
+                userId: crypto.randomUUID(),
+                projectId: crypto.randomUUID()
+            })
+        ).rejects.toThrow(UserNotFoundError);
+    });
+
+
+    it("should throw UserNotVerifiedError", async () => {
+        const unverifiedUser = await prisma.user.create({
+            data: {
+                username: "Unverified",
+                email: `unverified-${Date.now()}@test.com`,
+                password: "hashed-password",
+                verifiedAt: null
+            }
+        });
+
+        await expect(
+            deleteProject({
+                userId: unverifiedUser.id,
+                projectId: crypto.randomUUID()
+            })
+        ).rejects.toThrow(UserNotVerifiedError);
+
+        await prisma.user.delete({
+            where: {
+                id: unverifiedUser.id
+            }
+        });
+    });
+
+})
+
+
+
+
+
+
+
 
 
 afterAll(async () => {

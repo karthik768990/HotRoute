@@ -71,3 +71,9 @@ export class UnauthorizedProjectAccessError extends Error{
     }
 }
 
+export class ProjectNotFoundError extends Error{
+    constructor(message:string){
+        super(message)
+        this.name= 'ProjectNotFoundError'
+    }
+}
