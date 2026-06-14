@@ -7,6 +7,10 @@ interface SendVerificationEmailInput{
 }
 
 export async function sendVerificationEmail({email,token}:SendVerificationEmailInput):Promise<void>{
+    if(process.env.NODE_ENV==='test')return;
+
+
+
     const verificationURL = `${process.env.APP_URL}/verify-email?token=${encodeURIComponent(token)}`
     const verificationEmailContent = generateVerificationEmail(verificationURL)
     const sent= await resend.emails.send({
@@ -30,6 +34,10 @@ interface SendPasswordResetEmailInput{
 }
 
 export async function sendPasswordResetEmail({email,token}:SendPasswordResetEmailInput):Promise<void>{
+
+    if(process.env.NODE_ENV==='test')return;
+
+
     const resetUrl = `${process.env.APP_URL}/reset-password?token=${encodeURIComponent(token)}`
     const resetPasswordMailContent = generatePasswordResetEmail(resetUrl)
     const sent = await resend.emails.send(
@@ -43,6 +51,6 @@ export async function sendPasswordResetEmail({email,token}:SendPasswordResetEmai
     console.log(sent)
 
     if(sent.error){
-        throw new Error("Something went wrong with the email service"+sent.error)
+        throw new Error("Email service error : "+sent.error.message)
     }
 }  

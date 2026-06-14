@@ -7,6 +7,8 @@ export interface CreateProjectInput{
 
 
 export interface UpdateProjectInput{
+    projectId: string,
+    userId: string 
     name?: string,
     url?: string,
     interval?: number,

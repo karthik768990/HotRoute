@@ -66,9 +66,13 @@ export function validateProjectURL(projectURL: string):string {
 
 
 export function validateUnsafeMonitoring(projectURL: string) {
+    console.log("validateUnsafeMonitoring called")
     const parsedURL = new URL(projectURL)
     const isValid = !isLocalHost(parsedURL) && !isPrivateIp(parsedURL.hostname) && !isMetadataEndpoint(parsedURL.hostname)
     if (!isValid) {
         throw new UnsafeMonitoringTargetError('Project url should neither be localhost nor private ip addresses nor metadata endpoints')
     }
 }
+
+
+

@@ -1,6 +1,13 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it,afterEach } from "vitest";
 import prisma from "../prisma";
+import "dotenv/config"
 
+
+function getTestEmail() {
+    return `test-${crypto.randomUUID()}@test.com`;
+}
+
+let createdUserIds: string[] = [];
 import {
     registerUser,
     loginUser,
@@ -11,35 +18,74 @@ import {
 } from "./auth.service";
 
 import { hashPassword } from "./password";
-
 beforeEach(async () => {
-    await prisma.passwordResetToken.deleteMany();
-    await prisma.verificationToken.deleteMany();
-    await prisma.user.deleteMany();
+    createdUserIds = [];
+});
+
+
+afterEach(async () => {
+    await prisma.project.deleteMany({
+        where: {
+            userId: {
+                in: createdUserIds
+            }
+        }
+    });
+
+    await prisma.passwordResetToken.deleteMany({
+        where: {
+            userId: {
+                in: createdUserIds
+            }
+        }
+    });
+
+    await prisma.verificationToken.deleteMany({
+        where: {
+            userId: {
+                in: createdUserIds
+            }
+        }
+    });
+
+    await prisma.user.deleteMany({
+        where: {
+            id: {
+                in: createdUserIds
+            }
+        }
+    });
 });
 
 describe("registerUser", () => {
     it("should create a new user", async () => {
+        const email  = getTestEmail()
         const user = await registerUser({
             name: "Karthik",
-            email: "karthik@test.com",
+            email,
             password: "password123"
         });
 
-        expect(user.email).toBe("karthik@test.com");
+        createdUserIds.push(user.id);
+
+        expect(user.email).toBe(email);
         expect(user.username).toBe("Karthik");
     });
 
     it("should hash the password", async () => {
-        await registerUser({
+        const email  = getTestEmail()
+
+        const registeredUser = await registerUser({
             name: "Karthik",
-            email: "karthik@test.com",
+            email,
             password: "password123"
         });
 
+        createdUserIds.push(registeredUser.id);
+
         const user = await prisma.user.findUnique({
             where: {
-                email: "karthik@test.com"
+                email
             }
         });
 
@@ -47,16 +93,20 @@ describe("registerUser", () => {
     });
 
     it("should reject duplicate email", async () => {
-        await registerUser({
+        const email  = getTestEmail()
+
+        const user = await registerUser({
             name: "Karthik",
-            email: "karthik@test.com",
+            email,
             password: "password123"
         });
+
+        createdUserIds.push(user.id);
 
         await expect(
             registerUser({
                 name: "Another",
-                email: "karthik@test.com",
+                email,
                 password: "password123"
             })
         ).rejects.toThrow();
@@ -66,15 +116,17 @@ describe("registerUser", () => {
 describe("loginUser", () => {
     it("should login verified user", async () => {
         const password = await hashPassword("password123");
+        const email  = getTestEmail()
 
         const user = await prisma.user.create({
             data: {
                 username: "Karthik",
-                email: "karthik@test.com",
+                email: email,
                 password,
                 verifiedAt: new Date()
             }
         });
+        createdUserIds.push(user.id);
 
         const result = await loginUser({
             email: user.email,
@@ -87,19 +139,21 @@ describe("loginUser", () => {
 
     it("should reject invalid password", async () => {
         const password = await hashPassword("password123");
+        const email  = getTestEmail()
 
-        await prisma.user.create({
+        const user = await prisma.user.create({
             data: {
                 username: "Karthik",
-                email: "karthik@test.com",
+                email: email,
                 password,
                 verifiedAt: new Date()
             }
         });
+        createdUserIds.push(user.id);
 
         await expect(
             loginUser({
-                email: "karthik@test.com",
+                email: email,
                 password: "wrongPassword"
             })
         ).rejects.toThrow();
@@ -108,13 +162,16 @@ describe("loginUser", () => {
 
 describe("verifyEmail", () => {
     it("should verify user", async () => {
+        const email  = getTestEmail()
+
         const user = await prisma.user.create({
             data: {
                 username: "Karthik",
-                email: "karthik@test.com",
+                email: email,
                 password: "hashed"
             }
         });
+        createdUserIds.push(user.id);
 
         const token = await prisma.verificationToken.create({
             data: {
@@ -140,13 +197,16 @@ describe("verifyEmail", () => {
 
 describe("forgotPassword", () => {
     it("should create password reset token", async () => {
+        const email  = getTestEmail()
+
         const user = await prisma.user.create({
             data: {
                 username: "Karthik",
-                email: "karthik@test.com",
+                email: email,
                 password: "hashed"
             }
         });
+        createdUserIds.push(user.id);
 
         await forgotPassword({
             email: user.email
@@ -165,14 +225,16 @@ describe("forgotPassword", () => {
 describe("resetPassword", () => {
     it("should update password", async () => {
         const oldPassword = await hashPassword("oldPassword");
+        const email  = getTestEmail()
 
         const user = await prisma.user.create({
             data: {
                 username: "Karthik",
-                email: "karthik@test.com",
+                email: email,
                 password: oldPassword
             }
         });
+        createdUserIds.push(user.id);
 
         const token = await prisma.passwordResetToken.create({
             data: {
@@ -196,3 +258,5 @@ describe("resetPassword", () => {
         expect(updatedUser?.password).not.toBe(oldPassword);
     });
 });
+
+

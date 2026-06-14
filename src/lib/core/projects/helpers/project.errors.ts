@@ -59,3 +59,15 @@ export class UserNotVerifiedError extends UserValidationError{
 
 
 // DuplicateProjectError
+
+
+
+// this the extension for defining the errors and their classes 
+
+export class UnauthorizedProjectAccessError extends Error{
+    constructor(message: string){
+        super(message)
+        this.name = "UnauthorizedProjectAccessError"
+    }
+}
+

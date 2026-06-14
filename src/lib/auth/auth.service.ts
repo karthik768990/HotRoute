@@ -75,7 +75,7 @@ interface ResetPasswordResponse {
 export async function registerUser({
     name, email, password }: RegisterUserInput): Promise<RegisterUserResponse> {
 
-
+        
     name = name.trim()
     email = email.trim().toLowerCase()
     password = password.trim()
@@ -110,10 +110,11 @@ export async function registerUser({
             expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24)
         }
     })
-    
+    console.log("testing purpose: before email")
     await sendVerificationEmail({
         email: user.email,token
     })
+    console.log("testing purpose: after email")
 
     return {
         id: user.id,
@@ -204,6 +205,8 @@ export async function verifyEmail({ token }: VerifyEmailInput): Promise<VerifyEm
 
 
 export async function resendVerificationEmail({ email }: ResendVerificationInput): Promise<ResendVerificationResponse> {
+
+
     email = email.trim().toLowerCase()
     const existingUser = await prisma.user.findUnique({
         where: {
