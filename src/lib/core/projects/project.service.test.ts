@@ -11,48 +11,44 @@ console.log("DATABASE url " + process.env.DATABASE_URL)
 let userId: string
 let verifiedUser: User;
 
-    
     afterEach(async () => {
-    await prisma.project.deleteMany({
-        where: {
-            userId
-        }
-    });
-});
-beforeEach(async () => {
-    const user = await prisma.user.create({
-        data: {
-            username: "project-test-user",
-            email: `project-test-${Date.now()}@gmail.com`,
-            password: "hashed-password",
-            verifiedAt: new Date()
-        }
-
-
-
-    });
-    const verifieduser = await prisma.user.create({
-        data: {
-            username: "Another User",
-            email: `another-${Date.now()}@test.com`,
-            password: "hashed-password",
-            verifiedAt: new Date()
-        }
-    });
-    verifiedUser = verifieduser
-
-    userId = user.id;
-
-    console.log("CREATED USER ID:", userId);
-
-    const verify = await prisma.user.findUnique({
-        where: {
-            id: userId
+        for (const id of [userId, verifiedUser.id]) {
+            const projects = await prisma.project.findMany({ where: { userId: id } });
+            for (const p of projects) {
+                await prisma.project.delete({ where: { id: p.id } });
+            }
         }
     });
 
-    console.log("CREATED USER RECORD:", verify);
-});
+    afterAll(async () => {
+        await prisma.user.delete({ where: { id: userId } });
+        await prisma.user.delete({ where: { id: verifiedUser.id } });
+    });
+
+    beforeAll(async () => {
+        const user = await prisma.user.create({
+            data: {
+                username: "project-test-user",
+                email: `project-test-${Date.now()}@gmail.com`,
+                password: "hashed-password",
+                verifiedAt: new Date()
+            }
+        });
+
+        const verifieduser = await prisma.user.create({
+            data: {
+                username: "Another User",
+                email: `another-${Date.now()}@test.com`,
+                password: "hashed-password",
+                verifiedAt: new Date()
+            }
+        });
+        
+        verifiedUser = verifieduser;
+        userId = user.id;
+
+        console.log("CREATED USER ID:", userId);
+    });
 
 describe('createProject()', () => {
 
@@ -645,13 +641,6 @@ describe('updateProject()', () => {
         });
     });
 
-    afterEach(async () => {
-        await prisma.project.delete({
-            where: {
-                id: project.id
-            }
-        })
-    })
 })
 
 
@@ -796,13 +785,8 @@ describe('listprojects()', () => {
 
         expect(projects.length).toBeGreaterThanOrEqual(2);
 
-        await prisma.project.deleteMany({
-            where: {
-                id: {
-                    in: [project1.id, project2.id]
-                }
-            }
-        });
+        await prisma.project.delete({ where: { id: project1.id } });
+        await prisma.project.delete({ where: { id: project2.id } });
     });
 
     it("should return empty array when no projects exist", async () => {
@@ -853,13 +837,8 @@ describe('listprojects()', () => {
 
         expect(projects[0].id).toBe(newerProject.id);
 
-        await prisma.project.deleteMany({
-            where: {
-                id: {
-                    in: [olderProject.id, newerProject.id]
-                }
-            }
-        });
+        await prisma.project.delete({ where: { id: olderProject.id } });
+        await prisma.project.delete({ where: { id: newerProject.id } });
     });
 
 
@@ -1021,27 +1000,4 @@ describe("deletedProject()", () => {
 
 
 
-
-afterEach(async () => {
-    console.log("Deleting user:", userId);
-
-    const user = await prisma.user.findUnique({
-        where: { id: userId }
-    });
-
-    console.log("User before cleanup:", user);
-
-    await prisma.project.deleteMany({
-        where: { userId }
-    });
-
-    await prisma.user.deleteMany({
-        where: { id: userId }
-    });
-
-    await prisma.user.deleteMany({
-        where:{
-            id: verifiedUser.id
-        }
-    })
-});
+

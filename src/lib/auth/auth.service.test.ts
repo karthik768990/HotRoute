@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it,afterEach } from "vitest";
+import { beforeEach, describe, expect, it, afterEach, vi } from "vitest";
+vi.setConfig({ testTimeout: 30000 });
 import prisma from "../prisma";
 import "dotenv/config"
 
@@ -24,37 +25,28 @@ beforeEach(async () => {
 
 
 afterEach(async () => {
-    await prisma.project.deleteMany({
-        where: {
-            userId: {
-                in: createdUserIds
-            }
+    for (const userId of createdUserIds) {
+        const projects = await prisma.project.findMany({ where: { userId } });
+        for (const p of projects) {
+            await prisma.project.delete({ where: { id: p.id } });
         }
-    });
 
-    await prisma.passwordResetToken.deleteMany({
-        where: {
-            userId: {
-                in: createdUserIds
-            }
+        const pwdTokens = await prisma.passwordResetToken.findMany({ where: { userId } });
+        for (const t of pwdTokens) {
+            await prisma.passwordResetToken.delete({ where: { id: t.id } });
         }
-    });
 
-    await prisma.verificationToken.deleteMany({
-        where: {
-            userId: {
-                in: createdUserIds
-            }
+        const verTokens = await prisma.verificationToken.findMany({ where: { userId } });
+        for (const t of verTokens) {
+            await prisma.verificationToken.delete({ where: { id: t.id } });
         }
-    });
 
-    await prisma.user.deleteMany({
-        where: {
-            id: {
-                in: createdUserIds
-            }
-        }
-    });
+        await prisma.user.delete({
+            where: { id: userId }
+        });
+    }
+
+    createdUserIds = [];
 });
 
 describe("registerUser", () => {

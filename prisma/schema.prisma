@@ -37,10 +37,11 @@ model Project {
 
 model PingLog {
   id           String   @id @default(cuid())
-  statusCode   Int
+  statusCode   Int?
+  errorMessage String?
   responseTime Int
   success      Boolean
-  projectId    String
+  projectId    String 
   createdAt    DateTime @default(now())
   project      Project  @relation(fields: [projectId], references: [id])
 }
