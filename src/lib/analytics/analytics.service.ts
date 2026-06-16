@@ -75,6 +75,5 @@ export async function getPingHistory({ projectId }: GetPingHistoryInput): Promis
 
         where: { projectId: projectId }, orderBy: { createdAt: 'asc' }
     })
-    if (!allPingLogs) return []
     return allPingLogs
-}
+}   
