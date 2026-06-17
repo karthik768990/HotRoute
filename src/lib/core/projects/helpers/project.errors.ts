@@ -58,6 +58,13 @@ export class UserNotVerifiedError extends UserValidationError{
 
 
 
+export class AuthenticationRequiredError extends UserValidationError{
+    constructor(message:string){
+        super(message)
+        this.name = 'AuthenticationRequiredError'
+    }
+}
+
 // DuplicateProjectError
 
 
