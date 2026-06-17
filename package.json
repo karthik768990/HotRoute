@@ -21,6 +21,7 @@
     "uuid": "^14.0.0"
   },
   "devDependencies": {
+    "@cspell/cspell-bundled-dicts": "^10.0.1",
     "@tailwindcss/postcss": "^4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",

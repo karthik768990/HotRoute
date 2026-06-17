@@ -1,9 +1,9 @@
-import { Project, User } from "../../generated/prisma/browser";
+import { Project, User } from "../../../generated/prisma/browser";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 vi.setConfig({ hookTimeout: 30000, testTimeout: 30000 });
-import prisma from "../prisma";
+import prisma from "../../prisma";
 
-import { ProjectNotFoundError } from "../core/projects/helpers/project.errors";
+import { ProjectNotFoundError } from "../projects/helpers/project.errors";
 import {
     calculateUptimePercentage,
     calculateAverageResponseTime,

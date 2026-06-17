@@ -1,6 +1,6 @@
-import prisma from "../prisma";
-import { ProjectNotFoundError } from "../core/projects/helpers/project.errors";
-import { PingLog } from "../../generated/prisma/browser";
+import prisma from "../../prisma";
+import { ProjectNotFoundError } from "../projects/helpers/project.errors";
+import { PingLog } from "../../../generated/prisma/browser";
 import { CalculateAverageResponseTimeInput, CalculateUptimePercentageInput, GetPingHistoryInput, GetRecentFailuresInput } from "./analytics.types";
 
 //helpers 

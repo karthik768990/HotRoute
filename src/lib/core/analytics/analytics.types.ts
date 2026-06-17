@@ -11,6 +11,7 @@ export interface GetRecentFailuresInput{
     projectId: string
 }
 
+
 export interface GetPingHistoryInput{
     projectId:string
 }
