@@ -31,5 +31,5 @@ export function errorResponse(
         {
             status: statusCode,
         }
-    );
+    )
 }

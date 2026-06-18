@@ -1,5 +1,5 @@
-import { AuthenticationRequiredError } from "../core/projects/helpers/project.errors";
-import { User } from "../../generated/prisma/browser";
+import { AuthenticationRequiredError, ProjectNotFoundError, UnauthorizedProjectAccessError } from "../core/projects/helpers/project.errors";
+import { User, Project } from "../../generated/prisma/browser";
 import prisma from "../prisma";
 import { verifyToken } from "./jwt";
 
@@ -25,9 +25,21 @@ export async function getAuthenticatedUser(request: Request): Promise<User | nul
 }
 
 
-export async function requireAuthenticatedUser(request: Request):Promise<User>{
+export async function requireAuthenticatedUser(request: Request): Promise<User> {
     const user = await getAuthenticatedUser(request)
-    if(user===null)throw new AuthenticationRequiredError("User authentication required")
-       
-    return user    
+    if (user === null) throw new AuthenticationRequiredError("User authentication required")
+
+    return user
 }
+
+interface RequireAuthorizedProjectInput {
+    userId: string,
+    projectId: string
+}
+export async function requireAuthorizedProject({ userId, projectId }: RequireAuthorizedProjectInput): Promise<Project> {
+    const project = await prisma.project.findUnique({ where: { id: projectId } })
+    if (!project) throw new ProjectNotFoundError('Project not found ')
+
+    if (project.userId !== userId) throw new UnauthorizedProjectAccessError('Unauthorized project access error ')
+    return project
+}   

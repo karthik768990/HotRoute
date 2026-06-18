@@ -1,56 +1,57 @@
+import { requireAuthenticatedUser } from "@/lib/auth/auth.helper"
 
-export class ProjectValidationError extends Error{
-    constructor(message:string){
+export class ProjectValidationError extends Error {
+    constructor(message: string) {
         super(message)
         this.name = 'ProjectValidationError'
     }
 }
-export class UserValidationError extends Error{
-    constructor(message: string){
+export class UserValidationError extends Error {
+    constructor(message: string) {
         super(message)
-        this.name= 'UserValidationError'
+        this.name = 'UserValidationError'
     }
 }
-export class InvalidIntervalError extends ProjectValidationError{
-    constructor(message:string){
+export class InvalidIntervalError extends ProjectValidationError {
+    constructor(message: string) {
         super(message)
         this.name = 'InvalidIntervalError'
     }
-    
+
 }
 
-export class InvalidProjectNameError extends ProjectValidationError{
-    constructor(message: string){
+export class InvalidProjectNameError extends ProjectValidationError {
+    constructor(message: string) {
         super(message)
         this.name = 'InvalidProjectNameError'
     }
 }
 
-export class InvalidProjectUrlError extends ProjectValidationError{
-    constructor(message: string){
+export class InvalidProjectUrlError extends ProjectValidationError {
+    constructor(message: string) {
         super(message)
         this.name = 'InvalidProjectUrlError'
     }
 }
 
 
-export class UnsafeMonitoringTargetError extends ProjectValidationError{
-    constructor(message: string){
+export class UnsafeMonitoringTargetError extends ProjectValidationError {
+    constructor(message: string) {
         super(message)
         this.name = 'UnsafeMonitoringTargetError'
     }
 }
 
-export class UserNotFoundError extends UserValidationError{
-    constructor(message: string){
+export class UserNotFoundError extends UserValidationError {
+    constructor(message: string) {
         super(message)
         this.name = 'UserNotFoundError'
     }
 }
 
 
-export class UserNotVerifiedError extends UserValidationError{
-    constructor(message: string){
+export class UserNotVerifiedError extends UserValidationError {
+    constructor(message: string) {
         super(message)
         this.name = 'UserNotVerifiedError'
     }
@@ -58,8 +59,8 @@ export class UserNotVerifiedError extends UserValidationError{
 
 
 
-export class AuthenticationRequiredError extends UserValidationError{
-    constructor(message:string){
+export class AuthenticationRequiredError extends UserValidationError {
+    constructor(message: string) {
         super(message)
         this.name = 'AuthenticationRequiredError'
     }
@@ -71,24 +72,30 @@ export class AuthenticationRequiredError extends UserValidationError{
 
 // this the extension for defining the errors and their classes 
 
-export class UnauthorizedProjectAccessError extends Error{
-    constructor(message: string){
+export class UnauthorizedProjectAccessError extends Error {
+    constructor(message: string) {
         super(message)
         this.name = "UnauthorizedProjectAccessError"
     }
 }
 
-export class ProjectNotFoundError extends Error{
-    constructor(message:string){
+export class ProjectNotFoundError extends Error {
+    constructor(message: string) {
         super(message)
-        this.name= 'ProjectNotFoundError'
+        this.name = 'ProjectNotFoundError'
     }
 }
 
 
-export class DuplicateProjectError extends Error{
-    constructor(message:string){
+export class DuplicateProjectError extends Error {
+    constructor(message: string) {
         super(message)
-        this.name  = 'DuplicateProjectError'
+        this.name = 'DuplicateProjectError'
+    }
+}
+export class ProjectInactiveError extends Error {
+    constructor(message: string) {
+        super(message)
+        this.name = "Project inactive"
     }
 }

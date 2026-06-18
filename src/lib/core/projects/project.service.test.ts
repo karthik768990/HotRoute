@@ -11,48 +11,48 @@ console.log("DATABASE url " + process.env.DATABASE_URL)
 let userId: string
 let verifiedUser: User;
 
-    afterEach(async () => {
-        for (const id of [userId, verifiedUser.id]) {
-            const projects = await prisma.project.findMany({ where: { userId: id } });
-            for (const p of projects) {
-                await prisma.project.delete({ where: { id: p.id } });
-            }
+afterEach(async () => {
+    for (const id of [userId, verifiedUser.id]) {
+        const projects = await prisma.project.findMany({ where: { userId: id } });
+        for (const p of projects) {
+            await prisma.project.delete({ where: { id: p.id } });
+        }
+    }
+});
+
+afterAll(async () => {
+    await prisma.user.delete({ where: { id: userId } });
+    await prisma.user.delete({ where: { id: verifiedUser.id } });
+});
+
+beforeAll(async () => {
+    const user = await prisma.user.create({
+        data: {
+            username: "project-test-user",
+            email: `project-test-${Date.now()}@gmail.com`,
+            password: "hashed-password",
+            verifiedAt: new Date()
         }
     });
 
-    afterAll(async () => {
-        await prisma.user.delete({ where: { id: userId } });
-        await prisma.user.delete({ where: { id: verifiedUser.id } });
+    const verifieduser = await prisma.user.create({
+        data: {
+            username: "Another User",
+            email: `another-${Date.now()}@test.com`,
+            password: "hashed-password",
+            verifiedAt: new Date()
+        }
     });
 
-    beforeAll(async () => {
-        const user = await prisma.user.create({
-            data: {
-                username: "project-test-user",
-                email: `project-test-${Date.now()}@gmail.com`,
-                password: "hashed-password",
-                verifiedAt: new Date()
-            }
-        });
+    verifiedUser = verifieduser;
+    userId = user.id;
 
-        const verifieduser = await prisma.user.create({
-            data: {
-                username: "Another User",
-                email: `another-${Date.now()}@test.com`,
-                password: "hashed-password",
-                verifiedAt: new Date()
-            }
-        });
-        
-        verifiedUser = verifieduser;
-        userId = user.id;
-
-        console.log("CREATED USER ID:", userId);
-    });
+    console.log("CREATED USER ID:", userId);
+});
 
 describe('createProject()', () => {
 
-    
+
     //url validation
 
     describe("URL Validation", () => {
@@ -993,11 +993,3 @@ describe("deletedProject()", () => {
 
 })
 
-
-
-
-
-
-
-
-

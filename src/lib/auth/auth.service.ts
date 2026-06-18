@@ -1,6 +1,7 @@
 
 
 
+import { UserNotVerifiedError } from "../core/projects/helpers/project.errors";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../email/email.service";
 import prisma from "../prisma";
 import { generateJWTToken } from "./jwt";
@@ -75,7 +76,7 @@ interface ResetPasswordResponse {
 export async function registerUser({
     name, email, password }: RegisterUserInput): Promise<RegisterUserResponse> {
 
-        
+
     name = name.trim()
     email = email.trim().toLowerCase()
     password = password.trim()
@@ -111,8 +112,9 @@ export async function registerUser({
         }
     })
     console.log("testing purpose: before email")
+    console.log(process.env.NODE_ENV)
     await sendVerificationEmail({
-        email: user.email,token
+        email: user.email, token
     })
     console.log("testing purpose: after email")
 
@@ -143,7 +145,7 @@ export async function loginUser({ email, password }: LoginUserInput): Promise<Lo
     }
     const verificationDate = existingUser.verifiedAt
     if (!verificationDate) {
-        throw new Error("User not verified his/her email")
+        throw new UserNotVerifiedError('User not verified his/her email')
     }
     const jwtToken = generateJWTToken(existingUser.id)
     return {
@@ -255,7 +257,7 @@ export async function resendVerificationEmail({ email }: ResendVerificationInput
         }
     })
 
-    
+
     await sendVerificationEmail({
         email: existingUser.email,
         token
@@ -362,24 +364,24 @@ export async function resetPassword({
         throw new Error("The token has expired")
     }
     const newHashedPassword = await hashPassword(newPassword)
-    
+
     const existingUserId = existingToken.userId
     if (!existingUserId) {
         throw new Error("Corresponding user does not found")
     }
-     
+
     await prisma.user.update({
-        where:{
-            id:existingUserId
+        where: {
+            id: existingUserId
         },
-        data:{
+        data: {
             password: newHashedPassword
         }
     })
-   
+
     await prisma.passwordResetToken.delete({
-        where:{
-            token:token
+        where: {
+            token: token
         }
     })
 
