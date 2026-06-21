@@ -7,13 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Play, Pause, RefreshCw, ArrowLeft, CheckCircle2, XCircle, Activity, Globe, Clock, ShieldAlert } from "lucide-react";
+import { Loader2, Play, Pause, RefreshCw, ArrowLeft, CheckCircle2, XCircle, Activity, Globe, Clock, ShieldAlert, Zap } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow, format } from "date-fns";
 
 export default function ProjectDashboardPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);
-  
+
   const { data: project, isLoading: projectLoading } = useProject(projectId);
   const { data: dashboard, isLoading: dashboardLoading } = useProjectDashboard(projectId);
   const { mutateAsync: manualPing, isPending: isPinging } = useManualPing();
