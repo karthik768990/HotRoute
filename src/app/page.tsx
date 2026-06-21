@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Activity, ShieldCheck, Zap, BarChart3, ChevronRight } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 export const metadata = {
   title: "HotRoute - Premium Uptime Monitoring",
@@ -13,7 +14,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/50 backdrop-blur-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-6">
           <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
-            <Activity className="h-5 w-5 text-primary" />
+            <Logo className="h-6 w-6" />
             <span>HotRoute</span>
           </div>
           <nav className="flex items-center gap-4">
@@ -103,7 +104,7 @@ export default function Home() {
       <footer className="border-t border-white/10 bg-black py-12">
         <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2 font-bold text-lg">
-            <Activity className="h-4 w-4 text-primary" />
+            <Logo className="h-5 w-5" />
             <span>HotRoute</span>
           </div>
           <p className="text-sm text-zinc-500">

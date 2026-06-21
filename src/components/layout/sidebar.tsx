@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Activity, Folder, Settings, ShieldAlert } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: Activity },
@@ -17,7 +18,7 @@ export function Sidebar() {
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-background px-4 py-6">
       <Link href="/dashboard" className="flex items-center space-x-3 px-2 mb-8 hover:opacity-80 transition-opacity">
-        <ShieldAlert className="h-6 w-6 text-primary" />
+        <Logo className="h-6 w-6" />
         <span className="text-xl font-bold tracking-tight">HotRoute</span>
       </Link>
       <nav className="flex-1 space-y-1">
