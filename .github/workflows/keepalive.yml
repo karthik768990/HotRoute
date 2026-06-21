@@ -1,0 +1,21 @@
+name: Keep HotRoute Alive
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping HotRoute
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://hotroute.onrender.com/api/health)
+
+          if [ "$response" != "200" ]; then
+            echo "Health check failed with status $response"
+            exit 1
+          fi
+
+          echo "HotRoute healthy"
