@@ -95,7 +95,7 @@ export default function ProjectDashboardPage({ params }: { params: Promise<{ pro
     return dashboard.recentHistory.map((item) => ({
       ...item,
       timeLabel: format(new Date(item.createdAt), "HH:mm"),
-    })).reverse();
+    }));
   }, [dashboard?.recentHistory]);
 
   const handleToggleActive = async () => {
@@ -322,6 +322,7 @@ export default function ProjectDashboardPage({ params }: { params: Promise<{ pro
                       className="text-zinc-500 text-xs" 
                       tickLine={false} 
                       axisLine={false} 
+                      width={50}
                       tickFormatter={(value) => `${value}ms`}
                     />
                     <Tooltip
@@ -379,7 +380,7 @@ export default function ProjectDashboardPage({ params }: { params: Promise<{ pro
                       </TableCell>
                     </TableRow>
                   ) : (
-                    recentHistory.slice(0, 10).map((log) => (
+                    [...recentHistory].reverse().slice(0, 10).map((log) => (
                       <TableRow key={log.id} className="border-border/50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50 transition-colors">
                         <TableCell className="font-medium text-zinc-500 dark:text-zinc-400 pl-6">
                           {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}

@@ -21,7 +21,13 @@ import {
   Bell, 
   BarChart3,
   ArrowRight,
-  FilterX
+  FilterX,
+  X,
+  Check,
+  Loader2,
+  Download,
+  FileText,
+  CheckCircle2
 } from "lucide-react";
 import Link from "next/link";
 
@@ -90,6 +96,36 @@ export function GlobalUserDashboard({
   projects,
 }: GlobalUserDashboardProps) {
   const [filter, setFilter] = useState<FilterState>("ALL");
+  
+  // Modals state
+  const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false);
+  const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
+
+  // Alert Settings state
+  const [alertSettings, setAlertSettings] = useState({
+    emailAlerts: true,
+    notifyOnDowntime: true,
+    notifyOnRecovery: true,
+    weeklyReports: false,
+  });
+  const [isSavingAlerts, setIsSavingAlerts] = useState(false);
+  
+  // Toast state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleSaveAlerts = () => {
+    setIsSavingAlerts(true);
+    setTimeout(() => {
+      setIsSavingAlerts(false);
+      setIsAlertsModalOpen(false);
+      showToast("Alert preferences saved successfully.");
+    }, 800);
+  };
 
   // Filter derivations wrapped in useMemo for optimal performance
   const filteredProjects = useMemo(() => {
@@ -330,6 +366,7 @@ export function GlobalUserDashboard({
                       className="text-zinc-500 text-xs" 
                       tickLine={false} 
                       axisLine={false} 
+                      width={50}
                       tickFormatter={(value) => `${value}ms`}
                     />
                     <Tooltip
@@ -448,12 +485,20 @@ export function GlobalUserDashboard({
                   <ArrowRight className="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                 </Button>
                 
-                <Button variant="outline" className="w-full justify-between group border-border/50 hover:bg-zinc-100 dark:hover:bg-zinc-900">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-between group border-border/50 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                  onClick={() => setIsAlertsModalOpen(true)}
+                >
                   <span className="flex items-center"><Bell className="mr-2 h-4 w-4 text-amber-500" /> Manage Alerts</span>
                   <ArrowRight className="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                 </Button>
                 
-                <Button variant="outline" className="w-full justify-between group border-border/50 hover:bg-zinc-100 dark:hover:bg-zinc-900">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-between group border-border/50 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                  onClick={() => setIsReportsModalOpen(true)}
+                >
                   <span className="flex items-center"><BarChart3 className="mr-2 h-4 w-4 text-emerald-500" /> View Global Reports</span>
                   <ArrowRight className="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                 </Button>
@@ -462,6 +507,187 @@ export function GlobalUserDashboard({
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Manage Alerts Modal */}
+      <AnimatePresence>
+        {isAlertsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white dark:bg-zinc-950 border border-border/50 rounded-2xl p-6 max-w-md w-full shadow-xl"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold flex items-center text-zinc-900 dark:text-zinc-50">
+                  <Bell className="mr-2 h-5 w-5 text-amber-500" />
+                  Alert Settings
+                </h3>
+                <button 
+                  onClick={() => setIsAlertsModalOpen(false)}
+                  className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4 mb-8">
+                {[
+                  { key: 'emailAlerts', label: 'Email Alerts', description: 'Receive notifications via email.' },
+                  { key: 'notifyOnDowntime', label: 'Notify on Downtime', description: 'Immediate alert when a project goes offline.' },
+                  { key: 'notifyOnRecovery', label: 'Notify on Recovery', description: 'Alert when a project comes back online.' },
+                  { key: 'weeklyReports', label: 'Weekly Reports', description: 'Receive a weekly summary of fleet health.' },
+                ].map((setting) => (
+                  <div key={setting.key} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-zinc-50 dark:bg-zinc-900/50">
+                    <div className="flex flex-col pr-4">
+                      <span className="font-medium text-zinc-900 dark:text-zinc-100">{setting.label}</span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">{setting.description}</span>
+                    </div>
+                    {/* Minimalist custom toggle */}
+                    <button
+                      onClick={() => setAlertSettings(s => ({ ...s, [setting.key]: !(s as any)[setting.key] }))}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${(alertSettings as any)[setting.key] ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                    >
+                      <span className="sr-only">Toggle {setting.label}</span>
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${(alertSettings as any)[setting.key] ? 'translate-x-2' : '-translate-x-2'}`}
+                      />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="ghost" onClick={() => setIsAlertsModalOpen(false)} disabled={isSavingAlerts}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveAlerts} disabled={isSavingAlerts} className="bg-blue-600 text-white hover:bg-blue-700 min-w-[120px]">
+                  {isSavingAlerts ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Settings"
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Global Reports Modal */}
+      <AnimatePresence>
+        {isReportsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white dark:bg-zinc-950 border border-border/50 rounded-2xl p-6 max-w-2xl w-full shadow-xl flex flex-col max-h-[90vh]"
+            >
+              <div className="flex justify-between items-center mb-6 border-b border-border/50 pb-4">
+                <h3 className="text-xl font-bold flex items-center text-zinc-900 dark:text-zinc-50">
+                  <BarChart3 className="mr-2 h-5 w-5 text-emerald-500" />
+                  Global Monitoring Report
+                </h3>
+                <button 
+                  onClick={() => setIsReportsModalOpen(false)}
+                  className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-auto space-y-6 pr-2 pb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-border/50 flex flex-col">
+                    <span className="text-xs text-zinc-500 mb-1">Total Projects</span>
+                    <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{infrastructure.totalProjects}</span>
+                  </div>
+                  <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-border/50 flex flex-col">
+                    <span className="text-xs text-zinc-500 mb-1">Active</span>
+                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-500">{infrastructure.activePercentage.toFixed(1)}%</span>
+                  </div>
+                  <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-border/50 flex flex-col">
+                    <span className="text-xs text-zinc-500 mb-1">Fleet Uptime</span>
+                    <span className={`text-2xl font-bold ${infrastructure.overallUptime >= 99 ? 'text-emerald-500' : 'text-red-500'}`}>
+                      {infrastructure.overallUptime.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-border/50 flex flex-col">
+                    <span className="text-xs text-zinc-500 mb-1">Avg Latency</span>
+                    <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{infrastructure.globalAvgResponseTime}ms</span>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-xl border border-border/50 bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-900 dark:to-zinc-950">
+                  <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center">
+                    <Activity className="mr-2 h-4 w-4 text-blue-500" />
+                    Fleet Health Summary
+                  </h4>
+                  <p className="text-zinc-600 dark:text-zinc-300 text-sm leading-relaxed mb-4">
+                    Your global monitoring fleet is currently tracking <strong>{infrastructure.totalProjects}</strong> endpoints, 
+                    with <strong>{infrastructure.onlineProjects}</strong> currently online and <strong>{infrastructure.offlineProjects}</strong> offline. 
+                    The overall network health maintains an impressive uptime of <strong>{infrastructure.overallUptime.toFixed(2)}%</strong> 
+                    across all active projects.
+                  </p>
+                  
+                  {/* Visual health bar */}
+                  <div className="h-2 w-full bg-red-100 dark:bg-red-950 rounded-full overflow-hidden flex">
+                    <div 
+                      className="h-full bg-emerald-500 transition-all duration-1000" 
+                      style={{ width: `${infrastructure.totalProjects > 0 ? (infrastructure.onlineProjects / infrastructure.totalProjects) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-2 text-xs text-zinc-500">
+                    <span>{infrastructure.onlineProjects} Healthy</span>
+                    <span>{infrastructure.offlineProjects} Critical</span>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-xl border border-border/50 border-dashed bg-zinc-50/50 dark:bg-zinc-900/20">
+                  <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2 flex items-center">
+                    <Download className="mr-2 h-4 w-4 text-zinc-500" />
+                    Export Options
+                  </h4>
+                  <p className="text-xs text-zinc-500 mb-4">
+                    Download comprehensive historical logs and incident reports for compliance or offline analysis.
+                  </p>
+                  <div className="flex gap-3">
+                    <Button variant="outline" size="sm" className="opacity-50 cursor-not-allowed">
+                      <FileText className="mr-2 h-4 w-4" /> Export PDF
+                    </Button>
+                    <Button variant="outline" size="sm" className="opacity-50 cursor-not-allowed">
+                      <FileText className="mr-2 h-4 w-4" /> Export CSV
+                    </Button>
+                    <span className="text-xs text-amber-600 dark:text-amber-500 bg-amber-500/10 px-2 py-1 rounded ml-auto self-center">
+                      Coming Soon
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+            className="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg border border-emerald-200 dark:border-emerald-500/20 backdrop-blur-md font-medium flex items-center gap-3 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+          >
+            <CheckCircle2 className="h-5 w-5" />
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
