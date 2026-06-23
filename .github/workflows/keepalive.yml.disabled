@@ -2,7 +2,7 @@ name: Keep HotRoute Alive
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/14 * * * *"
   workflow_dispatch:
 
 jobs:
