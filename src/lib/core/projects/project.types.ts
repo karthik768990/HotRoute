@@ -1,14 +1,14 @@
-export interface CreateProjectInput{
+export interface CreateProjectInput {
     userId: string,
-    name:string,
+    name: string,
     url: string,
-    interval:number
+    interval: number
 }
 
 
-export interface UpdateProjectInput{
+export interface UpdateProjectInput {
     projectId: string,
-    userId: string 
+    userId: string
     name?: string,
     url?: string,
     interval?: number,
@@ -16,16 +16,16 @@ export interface UpdateProjectInput{
 }
 
 
-export interface GetProjectByIdInput{
-    userId:string,
-    projectId:string
+export interface GetProjectByIdInput {
+    userId: string,
+    projectId: string
 }
 
-export interface ListProjectsInput{
-    userId:string
+export interface ListProjectsInput {
+    userId: string
 }
 
-export interface DeleteProjectInput{
-    userId:string,
-    projectId:string
+export interface DeleteProjectInput {
+    userId: string,
+    projectId: string
 }

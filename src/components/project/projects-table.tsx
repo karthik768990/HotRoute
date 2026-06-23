@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Project } from "@/generated/prisma/browser";
 import { ProjectDrawer } from "./project-drawer";
-import { Play, Pause, Trash, Edit, Search, ActivitySquare, ArrowRight, Activity, Clock, Server, FolderSearch } from "lucide-react";
+import { Play, Pause, Trash, Edit, Search, ActivitySquare, ArrowRight, Activity, Clock, Server, FolderSearch, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,9 +21,20 @@ export function ProjectsTable({ projects }: { projects: ProjectWithMetrics[] }) 
   const [editingProject, setEditingProject] = useState<ProjectWithMetrics | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toastInfo, setToastInfo] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const { mutateAsync: updateProject } = useUpdateProject();
   const { mutateAsync: deleteProject } = useDeleteProject();
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToastInfo({ message, type });
+    setTimeout(() => {
+      setToastInfo((current) => current?.message === message ? null : current);
+    }, 3000);
+  };
 
   const handleEdit = (e: React.MouseEvent, project: ProjectWithMetrics) => {
     e.preventDefault();
@@ -52,15 +63,24 @@ export function ProjectsTable({ projects }: { projects: ProjectWithMetrics[] }) 
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, projectId: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, projectId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this project?")) {
-      try {
-        await deleteProject(projectId);
-      } catch (e) {
-        console.error(e);
-      }
+    setDeletingProjectId(projectId);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingProjectId) return;
+    setIsDeleting(true);
+    try {
+      await deleteProject(deletingProjectId);
+      setDeletingProjectId(null);
+      showToast("Project deleted successfully.", "success");
+    } catch (e) {
+      console.error(e);
+      showToast("Unable to delete project. Please try again.", "error");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -218,7 +238,7 @@ export function ProjectsTable({ projects }: { projects: ProjectWithMetrics[] }) 
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100" onClick={(e) => handleEdit(e, project)} title="Edit Project">
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={(e) => handleDelete(e, project.id)} title="Delete Project">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={(e) => handleDeleteClick(e, project.id)} title="Delete Project">
                             <Trash className="h-4 w-4" />
                           </Button>
                         </div>
@@ -241,6 +261,62 @@ export function ProjectsTable({ projects }: { projects: ProjectWithMetrics[] }) 
         onOpenChange={handleDrawerClose}
         project={editingProject as any}
       />
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deletingProjectId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white dark:bg-zinc-950 border border-border/50 rounded-2xl p-6 max-w-md w-full shadow-xl"
+            >
+              <h3 className="text-xl font-bold mb-2 text-zinc-900 dark:text-zinc-50">Delete Project</h3>
+              <p className="text-zinc-500 dark:text-zinc-400 mb-6">
+                Are you sure you want to delete <span className="font-semibold text-zinc-900 dark:text-zinc-100">{projects.find(p => p.id === deletingProjectId)?.name}</span>? This action cannot be undone and associated monitoring history will be lost.
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button variant="ghost" onClick={() => setDeletingProjectId(null)} disabled={isDeleting}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting} className="min-w-[120px]">
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete Project"
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+            className={`fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg border backdrop-blur-md font-medium flex items-center gap-3
+              ${toastInfo.type === "success" 
+                ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400" 
+                : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400"}`}
+          >
+            {toastInfo.type === "success" ? (
+              <CheckCircle2 className="h-5 w-5" />
+            ) : (
+              <AlertCircle className="h-5 w-5" />
+            )}
+            {toastInfo.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

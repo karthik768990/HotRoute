@@ -98,7 +98,7 @@ export async function updateProject({
             }
         })
 
-        if(duplicateProject){
+        if (duplicateProject) {
             throw new DuplicateProjectError("A project with this url already exists")
         }
         updateData.url = url
