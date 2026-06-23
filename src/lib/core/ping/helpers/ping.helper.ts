@@ -1,4 +1,4 @@
-const REQUEST_TIMEOUT_MS = 5000; //5 seconds
+const REQUEST_TIMEOUT_MS = 80000; //5 seconds
 const SUCCESS_STATUS_MIN = 200
 const SUCCESS_STATUS_MAX = 399;
 
