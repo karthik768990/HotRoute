@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/providers/query-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { GoogleProvider } from "@/providers/google-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,7 +29,9 @@ export default function RootLayout({
         >
           <Providers>
             <AuthProvider>
-              {children}
+              <GoogleProvider>
+                {children}
+              </GoogleProvider>
             </AuthProvider>
           </Providers>
         </ThemeProvider>

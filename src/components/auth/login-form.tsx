@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Loader2, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { GoogleLoginButton } from "@/components/auth/google-login-button";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -133,7 +134,8 @@ export function LoginForm() {
             ) : null}
             Sign In
           </Button>
-          <div className="text-sm text-center text-muted-foreground">
+          <GoogleLoginButton />
+          <div className="text-sm text-center text-muted-foreground pt-2">
             Don't have an account?{" "}
             <Link
               href="/register"

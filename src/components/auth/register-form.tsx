@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Loader2, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { GoogleLoginButton } from "@/components/auth/google-login-button";
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -135,7 +136,8 @@ export function RegisterForm() {
             ) : null}
             Sign Up
           </Button>
-          <div className="text-sm text-center text-muted-foreground">
+          <GoogleLoginButton />
+          <div className="text-sm text-center text-muted-foreground pt-2">
             Already have an account?{" "}
             <Link
               href="/login"
