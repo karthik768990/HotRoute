@@ -2,11 +2,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
 import { Project } from "@/generated/prisma/browser";
 
+export type ProjectWithMetrics = Project & {
+  pingLogs?: Array<{
+    id: string;
+    success: boolean;
+    responseTime: number;
+    createdAt: string | Date;
+  }>;
+};
+
 export function useProjects() {
   return useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
-      const response = await apiClient.get<{ success: boolean; data: Project[] }>("/projects");
+      const response = await apiClient.get<{ success: boolean; data: ProjectWithMetrics[] }>("/projects");
       return response.data.data;
     },
   });

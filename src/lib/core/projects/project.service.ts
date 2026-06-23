@@ -140,6 +140,12 @@ export async function listProjects({ userId }: ListProjectsInput): Promise<Array
         where: {
             userId: userId
         },
+        include: {
+            pingLogs: {
+                orderBy: { createdAt: 'desc' },
+                take: 24
+            }
+        },
         orderBy: {
             createdAt: 'desc'
         }
