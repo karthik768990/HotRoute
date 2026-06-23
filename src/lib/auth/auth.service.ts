@@ -4,6 +4,7 @@
 import { UserNotVerifiedError } from "../core/projects/helpers/project.errors";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../email/email.service";
 import prisma from "../prisma";
+import { OAuthAccountRequiredError } from "./google/helpers/google.errors";
 import { generateJWTToken } from "./jwt";
 import { hashPassword, verifyPassword } from "./password";
 import { generatePasswordResetToken, generateVerificationToken } from "./token";
@@ -27,7 +28,7 @@ interface LoginUserInput {
     password: string
 }
 
-interface LoginUserResponse {
+export interface LoginUserResponse {
     accessToken: string,
     user: {
         id: string,
@@ -131,6 +132,7 @@ export async function registerUser({
 export async function loginUser({ email, password }: LoginUserInput): Promise<LoginUserResponse> {
     email = email.trim().toLowerCase()
     password = password.trim()
+
     const existingUser = await prisma.user.findUnique({
         where: {
             email,
@@ -138,6 +140,9 @@ export async function loginUser({ email, password }: LoginUserInput): Promise<Lo
     })
     if (!existingUser) {
         throw new Error("Invalid credentials")
+    }
+    if (!existingUser.password && existingUser.googleId) {
+        throw new OAuthAccountRequiredError("This account uses Google Sign-In. Please log in with Google.");
     }
     const isEqual = await verifyPassword(password, existingUser?.password || '')
     if (!isEqual) {
@@ -218,6 +223,9 @@ export async function resendVerificationEmail({ email }: ResendVerificationInput
     if (!existingUser) {
         throw new Error("user does not exist")
     }
+    if (!existingUser.password && existingUser.googleId) {
+        throw new OAuthAccountRequiredError("This account uses Google Sign-In and is already verified.");
+    }
     const isNotVerified = !(existingUser.verifiedAt)
     if (!isNotVerified) {
         throw new Error("email already verified")
@@ -294,7 +302,9 @@ export async function forgotPassword({
             success: true
         }
     }
-
+    if (!existingUser.password && existingUser.googleId) {
+        throw new OAuthAccountRequiredError("This account uses Google Sign-In. Password reset is not available.");
+    }
     const latestToken = await prisma.passwordResetToken.findFirst({
         where: {
             userId: existingUser.id
