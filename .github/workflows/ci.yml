@@ -12,7 +12,7 @@ on:
       - develop
 
 jobs:
-  test:
+  test-and-build:
     runs-on: ubuntu-latest
 
     services:
@@ -62,19 +62,17 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Run Database Migrations
+      - name: Apply Database Migrations
         run: npx prisma migrate deploy
 
-      - name: Type Check
+      - name: Run TypeScript Check
         run: npx tsc --noEmit
 
-      - name: Lint
+      - name: Run ESLint
         run: npm run lint
 
-      - name: Run Tests
+      - name: Run Vitest Suite
         run: npx vitest run
-      
 
-
-      - name: Build Application
+      - name: Verify Production Build
         run: npm run build
