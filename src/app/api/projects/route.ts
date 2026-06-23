@@ -25,6 +25,7 @@ export async function  POST(request:Request){
         const user = await requireAuthenticatedUser(request)
         const result= await createProject({userId: user.id, name,url,interval})
         return successResponse(result,201)
+
         
     }catch(error: any){
         return errorResponse(error.message, mapErrorToCode(error), mapErrorToStatus(error))
