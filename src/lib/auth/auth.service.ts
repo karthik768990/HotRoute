@@ -80,7 +80,7 @@ export async function registerUser({
 
     name = name.trim()
     email = email.trim().toLowerCase()
-    password = password.trim()
+    password = password
 
 
 
