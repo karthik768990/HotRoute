@@ -1,4 +1,4 @@
-const REQUEST_TIMEOUT_MS = 80000; //5 seconds
+const REQUEST_TIMEOUT_MS = 80000; // new timeout to tackle tthe slowest responses from platforms like render
 const SUCCESS_STATUS_MIN = 200
 const SUCCESS_STATUS_MAX = 399;
 
@@ -19,7 +19,6 @@ export async function executePing({ url }: ExecutePingInput): Promise<ExecutePin
     }, REQUEST_TIMEOUT_MS)
 
     const start = performance.now()
-    // TODO Nomalise AbortError -> Requests Timeout 
     try {
         const response = await request(url, {
             method: "GET",
@@ -41,6 +40,14 @@ export async function executePing({ url }: ExecutePingInput): Promise<ExecutePin
             errorMessage: null
         }
     } catch (error) {
+        let errorMessage: string = 'Unknown error'
+        if(error instanceof Error){
+            if(error.message === 'AbortError'){
+                errorMessage = "Request Timeout"
+            }else{
+                errorMessage =error.message
+            }
+        }
         const end = performance.now()
         clearTimeout(timeout)
 
@@ -49,7 +56,7 @@ export async function executePing({ url }: ExecutePingInput): Promise<ExecutePin
             statusCode: null,
             responseTime,
             success: false,
-            errorMessage: error instanceof Error ? error.message : "Unknown error"
+            errorMessage: errorMessage
         }
     }
 }

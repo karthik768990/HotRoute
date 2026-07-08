@@ -2,7 +2,6 @@ import { getAllActiveProjects } from "./helpers/scheduler.projects";
 import { Project } from "../../../generated/prisma/browser";
 import { InMemoryQueue } from "../queue/queue.memory";
 
-// TODO findProjectsDueForPing() enqueueDueProjects()
 
 export function isProjectDueForPing(project: Project,date:Date):boolean{
 

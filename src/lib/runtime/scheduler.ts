@@ -7,11 +7,9 @@ let schedulerInterval: NodeJS.Timeout | null = null;
 
 export function startScheduler() {
     if (schedulerInterval) {
-        console.log("Scheduler is already running.");
         return;
     }
 
-    console.log("Starting scheduler loop...");
     schedulerInterval = setInterval(async () => {
         try {
             await enqueueDueProjects(monitoringQueue);

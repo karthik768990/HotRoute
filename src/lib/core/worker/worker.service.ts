@@ -6,10 +6,8 @@ import { performPing } from "../ping/ping.service";
 
 export class WorkerService implements QueueListener {
 
-    // TODO:
-    // Use this when introducing worker concurrency control
-    // to prevent overlapping processing in the same worker.
-    private processing: boolean = false; // dont use it rather
+ 
+    private processing: boolean = false; 
 
 
 

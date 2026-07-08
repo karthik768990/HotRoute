@@ -11,3 +11,17 @@ export class OAuthAccountRequiredError extends Error {
         this.name = "OAuthAccountRequiredError";
     }
 }
+
+export class TokenExpiredError extends Error{
+    constructor(message: string = "the token has expired"){
+        super(message)
+        this.name = 'TokenExpiredError';
+    }
+}
+
+export class TokenDoesNotExistError extends Error{
+    constructor(message: string = "token does not exist"){
+        super(message)
+        this.name = 'TokenDoesNotExistError'    
+    }
+}

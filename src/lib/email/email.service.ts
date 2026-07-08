@@ -19,7 +19,6 @@ export async function sendVerificationEmail({email,token}:SendVerificationEmailI
         subject:`${verificationEmailContent.subject}`,
         html:`${verificationEmailContent.html}`
     })
-    console.log(sent)
 
     if(sent.error){
         throw new Error("Something went wrong with the email service"+sent.error)
@@ -48,7 +47,6 @@ export async function sendPasswordResetEmail({email,token}:SendPasswordResetEmai
             html:`${resetPasswordMailContent.html}`
         }
     )
-    console.log(sent)
 
     if(sent.error){
         throw new Error("Email service error : "+sent.error.message)

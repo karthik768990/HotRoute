@@ -1,4 +1,3 @@
-import { requireAuthenticatedUser } from "@/lib/auth/auth.helper"
 
 export class ProjectValidationError extends Error {
     constructor(message: string) {
@@ -97,5 +96,25 @@ export class ProjectInactiveError extends Error {
     constructor(message: string) {
         super(message)
         this.name = "Project inactive"
+    }
+}
+
+
+export class InvalidCredentialsError extends Error{
+    constructor(message: string  = "Invalid credentials"){
+        super(message)
+        this.name = 'InvalidCredentialsError'
+    }
+}
+export class UserAlreadyExistsError extends Error{
+    constructor(message: string  = "User already exists"){
+        super(message)
+        this.name = 'UserAlreadyExistsError'
+    }
+}
+export class AlreadyVerifiedError extends Error{
+    constructor(message: string  = "user already verified"){
+        super(message)
+        this.name = 'AlreadyVerifiedError'
     }
 }

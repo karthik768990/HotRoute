@@ -1,10 +1,7 @@
-
-
-
-import { UserNotVerifiedError } from "../core/projects/helpers/project.errors";
+import { AlreadyVerifiedError, InvalidCredentialsError, UserAlreadyExistsError, UserNotFoundError, UserNotVerifiedError } from "../core/projects/helpers/project.errors";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../email/email.service";
 import prisma from "../prisma";
-import { OAuthAccountRequiredError } from "./google/helpers/google.errors";
+import { InvalidGoogleTokenError, OAuthAccountRequiredError, TokenDoesNotExistError, TokenExpiredError } from "./google/helpers/google.errors";
 import { generateJWTToken } from "./jwt";
 import { hashPassword, verifyPassword } from "./password";
 import { generatePasswordResetToken, generateVerificationToken } from "./token";
@@ -91,7 +88,7 @@ export async function registerUser({
     })
 
     if (existingUser) {
-        throw new Error("Email already registered")
+        throw new UserAlreadyExistsError('user already exists')        
     }
 
     const hashedPassword = await hashPassword(password)
@@ -105,6 +102,7 @@ export async function registerUser({
 
     const token = generateVerificationToken()
 
+
     await prisma.verificationToken.create({
         data: {
             token,
@@ -112,12 +110,10 @@ export async function registerUser({
             expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24)
         }
     })
-    console.log("testing purpose: before email")
-    console.log(process.env.NODE_ENV)
+
     await sendVerificationEmail({
         email: user.email, token
     })
-    console.log("testing purpose: after email")
 
     return {
         id: user.id,
@@ -139,14 +135,14 @@ export async function loginUser({ email, password }: LoginUserInput): Promise<Lo
         },
     })
     if (!existingUser) {
-        throw new Error("Invalid credentials")
+        throw new InvalidCredentialsError("Invaliid credentials")
     }
     if (!existingUser.password && existingUser.googleId) {
         throw new OAuthAccountRequiredError("This account uses Google Sign-In. Please log in with Google.");
     }
     const isEqual = await verifyPassword(password, existingUser?.password || '')
     if (!isEqual) {
-        throw new Error("Invalid credentials")
+        throw new InvalidCredentialsError("Invaliid credentials")
     }
     const verificationDate = existingUser.verifiedAt
     if (!verificationDate) {
@@ -174,13 +170,12 @@ export async function verifyEmail({ token }: VerifyEmailInput): Promise<VerifyEm
     }
     )
     if (!existingToken) {
-
-        throw new Error("Token does not exist")
+        throw new TokenDoesNotExistError('Token does not exist')
 
     }
     const currentTime = new Date()
     if (!(existingToken.expiresAt > currentTime))
-        throw new Error("Token expired")
+        throw new TokenExpiredError("Token expired")
     const correspondingUserId = existingToken.userId
     const correspondingUser = await prisma.user.findUnique({
         where: {
@@ -188,7 +183,7 @@ export async function verifyEmail({ token }: VerifyEmailInput): Promise<VerifyEm
         }
     })
     if (!correspondingUser) {
-        throw new Error("User failed")
+        throw new UserNotFoundError("User not found")
     }
     await prisma.user.update({
         where: {
@@ -221,14 +216,14 @@ export async function resendVerificationEmail({ email }: ResendVerificationInput
         }
     })
     if (!existingUser) {
-        throw new Error("user does not exist")
+        throw new UserNotFoundError("user does not exist")
     }
     if (!existingUser.password && existingUser.googleId) {
         throw new OAuthAccountRequiredError("This account uses Google Sign-In and is already verified.");
     }
     const isNotVerified = !(existingUser.verifiedAt)
     if (!isNotVerified) {
-        throw new Error("email already verified")
+        throw new AlreadyVerifiedError("email already verified")
     }
     const latestToken = await prisma.verificationToken.findFirst({
         where: {
@@ -279,12 +274,7 @@ export async function resendVerificationEmail({ email }: ResendVerificationInput
 
 
 
-// TODO : throw new InvalidCredentialsError()
-// throw new UserAlreadyExistsError()
-// throw new EmailNotVerifiedError()
-// throw new CooldownError()
 
-// TODO: forgotPassword() resetPassword() auth.service tests email-service integration 
 export async function forgotPassword({
     email
 }: ForgotPasswordInput): Promise<ForgotPasswordResponse> {
@@ -364,20 +354,21 @@ export async function resetPassword({
     })
 
     if (!existingToken) {
-        throw new Error("The token is invalid")
+        throw new InvalidGoogleTokenError("Invalid token")
 
     }
 
     const expiryTime = existingToken.expiresAt
     const isValid = expiryTime > (new Date())
     if (!isValid) {
-        throw new Error("The token has expired")
+        throw new TokenExpiredError('Token expired')
     }
     const newHashedPassword = await hashPassword(newPassword)
 
     const existingUserId = existingToken.userId
+
     if (!existingUserId) {
-        throw new Error("Corresponding user does not found")
+        throw new UserNotFoundError("user not found")
     }
 
     await prisma.user.update({
