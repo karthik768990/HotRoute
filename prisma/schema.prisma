@@ -70,4 +70,3 @@ model PasswordResetToken {
 
   @@index([userId])
 }
-  
