@@ -2,7 +2,6 @@ import { errorResponse, successResponse } from "../../../../lib/api/api.response
 import { loginUser } from "../../../../lib/auth/auth.service"
 import { mapErrorToCode, mapErrorToStatus } from "../../../../lib/api/api.errors"
 
-
 export async function POST(request: Request) {
     try {
         const requestBody = await request.json()

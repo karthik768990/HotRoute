@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { loginWithGoogle } from "@/lib/auth/google/google.service";
-import { InvalidGoogleTokenError } from "@/lib/auth/google/helpers/google.errors";
 import { generateJWTToken } from "@/lib/auth/jwt";
 import { LoginUserResponse } from "@/lib/auth/auth.service";
 import { errorResponse, successResponse } from "@/lib/api/api.response";

@@ -131,7 +131,7 @@ export async function registerUser({
 
 export async function loginUser({ email, password }: LoginUserInput): Promise<LoginUserResponse> {
     email = email.trim().toLowerCase()
-    password = password.trim()
+    password = password
 
     const existingUser = await prisma.user.findUnique({
         where: {
