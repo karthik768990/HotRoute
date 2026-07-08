@@ -1,8 +1,8 @@
 import { mapErrorToCode, mapErrorToStatus } from "@/lib/api/api.errors"
 import { errorResponse, successResponse } from "@/lib/api/api.response"
 import { requireAuthenticatedUser, requireAuthorizedProject } from "@/lib/auth/auth.helper"
-import { performPing } from "@/lib/core/ping/ping.service"
-import { ProjectInactiveError } from "@/lib/core/projects/helpers/project.errors"
+import { performPing } from "@/lib/ping/ping.service"
+import { ProjectInactiveError } from "@/lib/projects/helpers/project.errors"
 
 
 
@@ -15,8 +15,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
         const result = await performPing({ projectId: project.id })
         if (result === null) throw new ProjectInactiveError("Project inactive")
         return successResponse(result, 200)
-    } catch (error: any) {
-        return errorResponse(error.message, mapErrorToCode(error), mapErrorToStatus(error))
+    } catch (error: unknown) {
+        const e = error as Error;
+        return errorResponse(e.message, mapErrorToCode(e), mapErrorToStatus(e))
 
     }
 

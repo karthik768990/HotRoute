@@ -1,4 +1,4 @@
-import { AuthenticationRequiredError, ProjectNotFoundError, UnauthorizedProjectAccessError } from "../core/projects/helpers/project.errors";
+import { AuthenticationRequiredError, ProjectNotFoundError, UnauthorizedProjectAccessError } from "../projects/helpers/project.errors";
 import { User, Project } from "../../generated/prisma/browser";
 import prisma from "../prisma";
 import { verifyToken } from "./jwt";
@@ -18,7 +18,7 @@ export async function getAuthenticatedUser(request: Request): Promise<User | nul
         if (!existingUser) return null
         return existingUser
 
-    } catch (error: any) {
+    } catch {
         return null
     }
 

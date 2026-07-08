@@ -9,7 +9,7 @@ interface UpdateUserProfileInput {
 }
 
 export async function updateUserProfile({ userId, username, email }: UpdateUserProfileInput) {
-    const data: any = {};
+    const data: { username?: string; email?: string } = {};
     if (username) data.username = username.trim();
     if (email) {
         data.email = email.trim().toLowerCase();

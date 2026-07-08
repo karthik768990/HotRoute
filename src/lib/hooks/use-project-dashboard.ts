@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
-import { GetProjectDashboardOutput } from "@/lib/dashboard/dashboard.types";
+import { GetProjectDashboardOutput } from "@/lib/dashboards/project/dashboard.types";
 
 export function useProjectDashboard(projectId: string) {
   return useQuery({
@@ -18,7 +18,7 @@ export function useManualPing() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (projectId: string) => {
-      const response = await apiClient.post<{ success: boolean; data: any }>(`/projects/${projectId}/ping`);
+      const response = await apiClient.post<{ success: boolean; data: unknown }>(`/projects/${projectId}/ping`);
       return response.data;
     },
     onSuccess: (_, projectId) => {

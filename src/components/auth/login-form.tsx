@@ -6,6 +6,7 @@ import * as z from "zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api/client";
+import { AxiosError } from "axios";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,8 +52,9 @@ export function LoginForm() {
       } else {
         setError(response.data.error || "Login failed");
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || "An unexpected error occurred. Please try again.");
+    } catch (err: unknown) {
+      const axiosError = err as AxiosError<{ error?: string }>;
+      setError(axiosError.response?.data?.error || "An unexpected error occurred. Please try again.");
     }
   };
 
@@ -136,7 +138,7 @@ export function LoginForm() {
           </Button>
           <GoogleLoginButton />
           <div className="text-sm text-center text-muted-foreground pt-2">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/register"
               className="font-semibold text-foreground hover:text-primary transition-colors"

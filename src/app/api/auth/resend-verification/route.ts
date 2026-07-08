@@ -8,7 +8,8 @@ export async function POST(request: Request) {
         const email = jsonRequest.email
         const result = await resendVerificationEmail({ email })
         return successResponse(result, 200)
-    } catch (error: any) {
-        return errorResponse(error.message, mapErrorToCode(error), mapErrorToStatus(error))
+    } catch (error: unknown) {
+        const e = error as Error;
+        return errorResponse(e.message, mapErrorToCode(e), mapErrorToStatus(e))
     }
 }

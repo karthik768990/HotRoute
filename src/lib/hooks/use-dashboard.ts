@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
-import { GetUserDashboardOutput } from "@/lib/user-dashboard/user-dashboard.types";
+import { GetUserDashboardOutput } from "@/lib/dashboards/global/user-dashboard.types";
 
 export function useDashboard() {
   return useQuery({

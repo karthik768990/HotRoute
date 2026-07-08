@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { useDashboard } from "@/lib/hooks/use-dashboard";
 import { GlobalUserDashboard } from "@/components/dashboard/global-user-dashboard";
 import { Loader2 } from "lucide-react";
@@ -12,9 +11,8 @@ export default function DashboardPage() {
   // Generate realistic-looking mock history data for the multi-line chart
   // This is a trade-off: the current API does not return a combined time-series
   // history for all projects. This data should ideally be fetched from a new API endpoint.
-  const combinedHistory = useMemo(() => {
-    if (!dashboard?.projects) return [];
-    
+  let combinedHistory: Record<string, string | number>[] = [];
+  if (dashboard?.projects) {
     const history = [];
     const now = new Date();
     const projectNames = dashboard.projects.map((p) => p.projectName);
@@ -22,20 +20,23 @@ export default function DashboardPage() {
     // Generate 12 data points (e.g., last 60 minutes in 5-min intervals)
     for (let i = 11; i >= 0; i--) {
       const time = new Date(now.getTime() - i * 5 * 60000);
-      const dataPoint: Record<string, any> = {
+      const dataPoint: Record<string, string | number> = {
         timeLabel: format(time, "HH:mm"),
       };
       
       projectNames.forEach((name) => {
         // Base response time between 50ms and 250ms, with occasional spikes
-        const base = Math.floor(Math.random() * 200) + 50;
-        const spike = Math.random() > 0.8 ? Math.floor(Math.random() * 1000) : 0;
+        // Deterministic mock generation to satisfy react compiler
+        const random1 = Math.abs(Math.sin(i + name.length)) * 200;
+        const random2 = Math.abs(Math.cos(i + name.length));
+        const base = Math.floor(random1) + 50;
+        const spike = random2 > 0.8 ? Math.floor(random2 * 1000) : 0;
         dataPoint[name] = base + spike;
       });
       history.push(dataPoint);
     }
-    return history;
-  }, [dashboard?.projects]);
+    combinedHistory = history;
+  }
 
   if (isLoading) {
     return (

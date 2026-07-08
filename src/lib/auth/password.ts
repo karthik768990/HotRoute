@@ -1,29 +1,27 @@
 import bcryptjs from "bcryptjs";
 
-async function hashPassword(password:string): Promise<string>{
-    password.trim()
+async function hashPassword(password: string): Promise<string> {
     const saltRounds = 12
-    try{
-        const hashedPassword = await bcryptjs.hash(password,saltRounds)
+    try {
+        const hashedPassword = await bcryptjs.hash(password, saltRounds)
         return hashedPassword
-    }catch(error: any){
+    } catch {
         throw new Error("Failed to hash password")
     }
 }
 
 
-async function verifyPassword(password: string,hashedPassword:string):Promise<boolean>{
-    password
-    try{
-        const isMatch = await  bcryptjs.compare(password,hashedPassword);
-        if(isMatch){
+async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+    try {
+        const isMatch = await bcryptjs.compare(password, hashedPassword);
+        if (isMatch) {
             return true;
         }
         return false;
-    }catch(error: any){
+    } catch {
         return false;
     }
 }
 
 
-export {hashPassword,verifyPassword}
+export { hashPassword, verifyPassword }

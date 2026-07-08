@@ -1,7 +1,7 @@
 import { mapErrorToCode, mapErrorToStatus } from "@/lib/api/api.errors";
 import { errorResponse, successResponse } from "@/lib/api/api.response";
 import { requireAuthenticatedUser, requireAuthorizedProject } from "@/lib/auth/auth.helper";
-import { getProjectDashboard } from "@/lib/dashboard/dashboard.services";
+import { getProjectDashboard } from "@/lib/dashboards/project/dashboard.service";
 
 export async function GET(request: Request, { params }: { params: Promise<{ projectId: string }> }) {
     try {
@@ -12,8 +12,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ proj
         const result = await getProjectDashboard({projectId: project.id})
         return successResponse(result,200)
 
-    } catch (error: any) {
-        return errorResponse(error.message, mapErrorToCode(error), mapErrorToStatus(error))
+    } catch (error: unknown) {
+        const e = error as Error;
+        return errorResponse(e.message, mapErrorToCode(e), mapErrorToStatus(e))
 
     }
 }

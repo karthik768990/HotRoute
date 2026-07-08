@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -78,8 +79,9 @@ export function ProjectDrawer({ open, onOpenChange, project }: ProjectDrawerProp
         await createProject(data);
       }
       onOpenChange(false);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to save project.");
+    } catch (err: unknown) {
+      const axiosError = err as import("axios").AxiosError<{ error?: string }>;
+      setError(axiosError.response?.data?.error || "Failed to save project.");
     }
   };
 

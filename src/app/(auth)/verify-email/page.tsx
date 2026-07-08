@@ -1,9 +1,10 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/api/client";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
@@ -33,9 +34,10 @@ function VerifyEmailContent() {
           setStatus("error");
           setMessage(response.data.error || "Verification failed. The token may be invalid or expired.");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const axiosError = err as import("axios").AxiosError<{ error?: string }>;
         setStatus("error");
-        setMessage(err.response?.data?.error || "An unexpected error occurred during verification.");
+        setMessage(axiosError.response?.data?.error || "An unexpected error occurred during verification.");
       }
     };
 

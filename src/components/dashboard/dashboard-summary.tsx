@@ -1,8 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BuildUserDashboardSummaryOutput } from "@/lib/user-dashboard/user-dashboard.types";
-import { Activity, CheckCircle2, FolderDot, XCircle, Zap } from "lucide-react";
+import { BuildUserDashboardSummaryOutput } from "@/lib/dashboards/global/user-dashboard.types";
+import { CheckCircle2, FolderDot, XCircle, Zap } from "lucide-react";
 
 export function DashboardSummary({ summary }: { summary: BuildUserDashboardSummaryOutput }) {
   return (

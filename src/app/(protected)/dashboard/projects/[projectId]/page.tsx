@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { use, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Area,
@@ -90,13 +90,10 @@ export default function ProjectDashboardPage({ params }: { params: Promise<{ pro
   
   const [pingError, setPingError] = useState<string | null>(null);
 
-  const chartData = useMemo(() => {
-    if (!dashboard?.recentHistory) return [];
-    return dashboard.recentHistory.map((item) => ({
-      ...item,
-      timeLabel: format(new Date(item.createdAt), "HH:mm"),
-    }));
-  }, [dashboard?.recentHistory]);
+  const chartData = !dashboard?.recentHistory ? [] : dashboard.recentHistory.map((item) => ({
+    ...item,
+    timeLabel: format(new Date(item.createdAt), "HH:mm"),
+  }));
 
   const handleToggleActive = async () => {
     if (!project) return;
@@ -111,8 +108,9 @@ export default function ProjectDashboardPage({ params }: { params: Promise<{ pro
     setPingError(null);
     try {
       await manualPing(projectId);
-    } catch (err: any) {
-      setPingError(err.response?.data?.error || "Failed to execute manual ping.");
+    } catch (err: unknown) {
+      const axiosError = err as import("axios").AxiosError<{ error?: string }>;
+      setPingError(axiosError.response?.data?.error || "Failed to execute manual ping.");
     }
   };
 
@@ -130,7 +128,7 @@ export default function ProjectDashboardPage({ params }: { params: Promise<{ pro
         <ShieldAlert className="h-12 w-12 text-destructive mb-4" />
         <h2 className="text-xl font-semibold">Project Not Found</h2>
         <p className="text-muted-foreground mt-2 max-w-sm">
-          Failed to load project details. It may have been deleted or you don't have access.
+          Failed to load project details. It may have been deleted or you don&apos;t have access.
         </p>
         <Button variant="outline" asChild className="mt-6">
           <Link href="/dashboard/projects">Return to Projects</Link>

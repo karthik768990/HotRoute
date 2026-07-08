@@ -65,7 +65,7 @@ export function useDeleteProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (projectId: string) => {
-      const response = await apiClient.delete<{ success: boolean; data: any }>(`/projects/${projectId}`);
+      const response = await apiClient.delete<{ success: boolean; data: unknown }>(`/projects/${projectId}`);
       return response.data.data;
     },
     onSuccess: () => {

@@ -6,6 +6,7 @@ import * as z from "zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api/client";
+import { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,8 +50,9 @@ export function RegisterForm() {
       } else {
         setError(response.data.error || "Registration failed");
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || "An unexpected error occurred. Please try again.");
+    } catch (err: unknown) {
+      const axiosError = err as AxiosError<{ error?: string }>;
+      setError(axiosError.response?.data?.error || "An unexpected error occurred. Please try again.");
     }
   };
 

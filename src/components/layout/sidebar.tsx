@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Activity, Folder, Settings, ShieldAlert } from "lucide-react";
+import { Activity, Folder, Settings } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 
 const navItems = [
@@ -32,7 +32,7 @@ export function Sidebar() {
                 "flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 item.href === "/dashboard"
                   ? pathname === "/dashboard" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  : (pathname === item.href || pathname.startsWith(`${item.href}/`))
+                  : isActive
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )}

@@ -1,8 +1,8 @@
-import { ProjectInactiveError, ProjectNotFoundError } from "../core/projects/helpers/project.errors";
-import { UserNotFoundError, UserNotVerifiedError } from "../core/projects/helpers/project.errors";
-import { InvalidProjectUrlError, InvalidIntervalError, InvalidProjectNameError, ProjectValidationError, UserValidationError, UnsafeMonitoringTargetError, UnauthorizedProjectAccessError, DuplicateProjectError, AuthenticationRequiredError } from "../core/projects/helpers/project.errors";
-import { NullJobError } from "../core/queue/helpers/queue.errors";
-import { NegativeWorkerCountError } from "../core/worker-pool/worker-pool.errors";
+import { ProjectInactiveError, ProjectNotFoundError } from "../projects/helpers/project.errors";
+import { UserNotFoundError, UserNotVerifiedError } from "../projects/helpers/project.errors";
+import { InvalidProjectUrlError, InvalidIntervalError, InvalidProjectNameError, ProjectValidationError, UserValidationError, UnsafeMonitoringTargetError, UnauthorizedProjectAccessError, DuplicateProjectError, AuthenticationRequiredError } from "../projects/helpers/project.errors";
+import { NullJobError } from "../background/queue/helpers/queue.errors";
+import { NegativeWorkerCountError } from "../background/worker-pool/worker-pool.errors";
 import { InvalidGoogleTokenError,OAuthAccountRequiredError } from "../auth/google/helpers/google.errors";
 
 

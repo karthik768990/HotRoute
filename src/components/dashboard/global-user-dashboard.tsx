@@ -23,7 +23,6 @@ import {
   ArrowRight,
   FilterX,
   X,
-  Check,
   Loader2,
   Download,
   FileText,
@@ -51,7 +50,7 @@ export type GlobalUserDashboardProps = {
     message: string;
     timeAgo: string;
   }>;
-  combinedHistory: Array<Record<string, any>>;
+  combinedHistory: Array<Record<string, string | number>>;
   projects: Array<{
     id: string;
     name: string;
@@ -328,7 +327,7 @@ export function GlobalUserDashboard({
             <CardHeader className="border-b border-border/50 bg-zinc-50/50 dark:bg-zinc-900/20">
               <CardTitle className="text-xl font-medium flex items-center">
                 <BarChart3 className="mr-2 h-5 w-5 text-zinc-500" />
-                "God's Eye" Response Times
+                &quot;God&apos;s Eye&quot; Response Times
               </CardTitle>
               <CardDescription>
                 Synchronized latency tracking across filtered projects
@@ -533,10 +532,10 @@ export function GlobalUserDashboard({
               
               <div className="space-y-4 mb-8">
                 {[
-                  { key: 'emailAlerts', label: 'Email Alerts', description: 'Receive notifications via email.' },
-                  { key: 'notifyOnDowntime', label: 'Notify on Downtime', description: 'Immediate alert when a project goes offline.' },
-                  { key: 'notifyOnRecovery', label: 'Notify on Recovery', description: 'Alert when a project comes back online.' },
-                  { key: 'weeklyReports', label: 'Weekly Reports', description: 'Receive a weekly summary of fleet health.' },
+                  { key: 'emailAlerts' as const, label: 'Email Alerts', description: 'Receive notifications via email.' },
+                  { key: 'notifyOnDowntime' as const, label: 'Notify on Downtime', description: 'Immediate alert when a project goes offline.' },
+                  { key: 'notifyOnRecovery' as const, label: 'Notify on Recovery', description: 'Alert when a project comes back online.' },
+                  { key: 'weeklyReports' as const, label: 'Weekly Reports', description: 'Receive a weekly summary of fleet health.' },
                 ].map((setting) => (
                   <div key={setting.key} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-zinc-50 dark:bg-zinc-900/50">
                     <div className="flex flex-col pr-4">
@@ -545,13 +544,13 @@ export function GlobalUserDashboard({
                     </div>
                     {/* Minimalist custom toggle */}
                     <button
-                      onClick={() => setAlertSettings(s => ({ ...s, [setting.key]: !(s as any)[setting.key] }))}
-                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${(alertSettings as any)[setting.key] ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                      onClick={() => setAlertSettings(s => ({ ...s, [setting.key]: !(s)[setting.key] }))}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${(alertSettings)[setting.key] ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'}`}
                     >
                       <span className="sr-only">Toggle {setting.label}</span>
                       <span
                         aria-hidden="true"
-                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${(alertSettings as any)[setting.key] ? 'translate-x-2' : '-translate-x-2'}`}
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${(alertSettings)[setting.key] ? 'translate-x-2' : '-translate-x-2'}`}
                       />
                     </button>
                   </div>

@@ -1,7 +1,7 @@
 import { mapErrorToCode, mapErrorToStatus } from "@/lib/api/api.errors";
 import { errorResponse, successResponse } from "@/lib/api/api.response";
 import { requireAuthenticatedUser } from "@/lib/auth/auth.helper";
-import { createProject, listProjects } from "@/lib/core/projects/project.service";
+import { createProject, listProjects } from "@/lib/projects/project.service";
 
 export async function GET(request: Request) {
     try {
@@ -9,12 +9,14 @@ export async function GET(request: Request) {
 
         const result = await listProjects({ userId: user.id })
         return successResponse(result, 200)
-    } catch (error: any) {
-        return errorResponse(error.message, mapErrorToCode(error), mapErrorToStatus(error))
+    } catch (error: unknown) {
+        const e = error as Error;
+        return errorResponse(e.message, mapErrorToCode(e), mapErrorToStatus(e))
 
     }
 
 }
+
 
 export async function  POST(request:Request){
     try{
@@ -27,8 +29,8 @@ export async function  POST(request:Request){
         return successResponse(result,201)
 
         
-    }catch(error: any){
-        return errorResponse(error.message, mapErrorToCode(error), mapErrorToStatus(error))
-
+    }catch(error: unknown){
+        const e = error as Error;
+        return errorResponse(e.message, mapErrorToCode(e), mapErrorToStatus(e))
     }
 }

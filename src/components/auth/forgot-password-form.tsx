@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState } from "react";
 import { apiClient } from "@/lib/api/client";
+import { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,8 +44,9 @@ export function ForgotPasswordForm() {
       } else {
         setError(response.data.error || "Failed to send reset email");
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || "An unexpected error occurred.");
+    } catch (err: unknown) {
+      const axiosError = err as AxiosError<{ error?: string }>;
+      setError(axiosError.response?.data?.error || "An unexpected error occurred.");
     }
   };
 

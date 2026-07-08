@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Activity, ShieldCheck, Zap, BarChart3, ChevronRight } from "lucide-react";
+import { ShieldCheck, Zap, BarChart3, ChevronRight } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 
 export const metadata = {

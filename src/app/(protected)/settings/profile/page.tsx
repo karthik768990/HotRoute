@@ -6,6 +6,7 @@ import * as z from "zod";
 import { useState } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { apiClient } from "@/lib/api/client";
+import { AxiosError } from "axios";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,8 +61,9 @@ export default function ProfileSettingsPage() {
       } else {
         setProfileMessage({ type: 'error', text: response.data.error || 'Failed to update profile.' });
       }
-    } catch (err: any) {
-      setProfileMessage({ type: 'error', text: err.response?.data?.error || 'An unexpected error occurred.' });
+    } catch (err: unknown) {
+      const axiosError = err as AxiosError<{ error?: string }>;
+      setProfileMessage({ type: 'error', text: axiosError.response?.data?.error || 'An unexpected error occurred.' });
     }
   };
 
@@ -75,8 +77,9 @@ export default function ProfileSettingsPage() {
       } else {
         setPasswordMessage({ type: 'error', text: response.data.error || 'Failed to update password.' });
       }
-    } catch (err: any) {
-      setPasswordMessage({ type: 'error', text: err.response?.data?.error || 'An unexpected error occurred.' });
+    } catch (err: unknown) {
+      const axiosError = err as AxiosError<{ error?: string }>;
+      setPasswordMessage({ type: 'error', text: axiosError.response?.data?.error || 'An unexpected error occurred.' });
     }
   };
 

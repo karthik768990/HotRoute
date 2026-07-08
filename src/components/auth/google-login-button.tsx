@@ -1,9 +1,11 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { apiClient } from "@/lib/api/client";
+import { AxiosError } from "axios";
 import { useAuth } from "@/providers/auth-provider";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -17,6 +19,7 @@ export function GoogleLoginButton() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+
     setMounted(true);
   }, []);
 
@@ -39,8 +42,9 @@ export function GoogleLoginButton() {
         setError(response.data.error || "Google login failed");
         setIsLoading(false);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || "An unexpected error occurred during Google login.");
+    } catch (err: unknown) {
+      const axiosError = err as AxiosError<{ error?: string }>;
+      setError(axiosError.response?.data?.error || "An unexpected error occurred during Google login.");
       setIsLoading(false);
     }
   };

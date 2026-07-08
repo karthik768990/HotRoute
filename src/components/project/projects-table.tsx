@@ -1,13 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { formatDistanceToNow } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Project } from "@/generated/prisma/browser";
 import { ProjectDrawer } from "./project-drawer";
 import { Play, Pause, Trash, Edit, Search, ActivitySquare, ArrowRight, Activity, Clock, Server, FolderSearch, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
@@ -124,7 +120,7 @@ export function ProjectsTable({ projects }: { projects: ProjectWithMetrics[] }) 
                   </div>
                   <h3 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">No projects found</h3>
                   <p className="text-zinc-500 dark:text-zinc-400 max-w-sm">
-                    You haven't added any endpoints to monitor yet. Create your first project to start tracking uptime and latency.
+                    You haven&apos;t added any endpoints to monitor yet. Create your first project to start tracking uptime and latency.
                   </p>
                 </div>
               </motion.div>
@@ -259,7 +255,7 @@ export function ProjectsTable({ projects }: { projects: ProjectWithMetrics[] }) 
       <ProjectDrawer
         open={isDrawerOpen}
         onOpenChange={handleDrawerClose}
-        project={editingProject as any}
+        project={editingProject}
       />
 
       {/* Delete Confirmation Modal */}

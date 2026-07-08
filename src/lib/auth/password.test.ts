@@ -30,15 +30,14 @@ describe("Password Module ",()=>{
 
 
     describe("verifyPassword()",()=>{
-        it("should validate the correct password"),async ()=>{
+        it("should validate the correct password", async () => {
             const password = 'password123'
             const hashedPassword = await hashPassword(password)
             const isValid = await verifyPassword(password,hashedPassword)
 
             expect(isValid).toBe(true)
-        }
+        })
 
-    })
         it("should reject the incorrect password",async ()=>{
             const password = 'password'
             const hashedPassword  = await hashPassword(password)
@@ -57,3 +56,4 @@ describe("Password Module ",()=>{
         
 
     })
+})

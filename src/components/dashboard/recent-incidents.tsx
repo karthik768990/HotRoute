@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RecentIncident } from "@/lib/user-dashboard/user-dashboard.types";
+import { RecentIncident } from "@/lib/dashboards/global/user-dashboard.types";
 import { formatDistanceToNow } from "date-fns";
 import { ShieldAlert } from "lucide-react";
 import Link from "next/link";

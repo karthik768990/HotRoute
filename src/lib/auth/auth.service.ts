@@ -1,4 +1,4 @@
-import { AlreadyVerifiedError, InvalidCredentialsError, UserAlreadyExistsError, UserNotFoundError, UserNotVerifiedError } from "../core/projects/helpers/project.errors";
+import { AlreadyVerifiedError, InvalidCredentialsError, UserAlreadyExistsError, UserNotFoundError, UserNotVerifiedError } from "../projects/helpers/project.errors";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../email/email.service";
 import prisma from "../prisma";
 import { InvalidGoogleTokenError, OAuthAccountRequiredError, TokenDoesNotExistError, TokenExpiredError } from "./google/helpers/google.errors";
@@ -70,50 +70,79 @@ interface ResetPasswordResponse {
     success: boolean
 }
 
+function validateLocalAuthAllowed(user: { password?: string | null, googleId?: string | null }, errorMessage: string): void {
+    if (!user.password && user.googleId) {
+        throw new OAuthAccountRequiredError(errorMessage);
+    }
+}
+
+function validateTokenRateLimit(latestTokenCreatedAt?: Date, errorMessage?: string): void {
+    const fiveMinutes = 5 * 60 * 1000;
+    if (latestTokenCreatedAt && Date.now() - latestTokenCreatedAt.getTime() < fiveMinutes) {
+        throw new Error(errorMessage || "Please wait before requesting another email");
+    }
+}
+
+function sanitizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+}
+
+async function generateAndSaveVerificationToken(userId: string): Promise<string> {
+    await prisma.verificationToken.deleteMany({ where: { userId } });
+    
+    const token = generateVerificationToken();
+    await prisma.verificationToken.create({
+        data: {
+            token,
+            userId,
+            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24)
+        }
+    });
+    
+    return token;
+}
+
+async function generateAndSavePasswordResetToken(userId: string): Promise<string> {
+    await prisma.passwordResetToken.deleteMany({ where: { userId } });
+    
+    const token = generatePasswordResetToken();
+    await prisma.passwordResetToken.create({
+        data: {
+            token,
+            userId,
+            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24)
+        }
+    });
+    
+    return token;
+}
+
 
 export async function registerUser({
     name, email, password }: RegisterUserInput): Promise<RegisterUserResponse> {
 
+    name = name.trim();
+    email = sanitizeEmail(email);
 
-    name = name.trim()
-    email = email.trim().toLowerCase()
-    password = password
-
-
-
-    const existingUser = await prisma.user.findUnique({
-        where: {
-            email,
-        },
-    })
+    const existingUser = await prisma.user.findUnique({ where: { email } });
 
     if (existingUser) {
-        throw new UserAlreadyExistsError('user already exists')        
+        throw new UserAlreadyExistsError('user already exists');
     }
 
-    const hashedPassword = await hashPassword(password)
+    const hashedPassword = await hashPassword(password);
 
     const user = await prisma.user.create({
         data: {
             username: name,
-            email, password: hashedPassword
+            email, 
+            password: hashedPassword
         },
-    })
+    });
 
-    const token = generateVerificationToken()
+    const token = await generateAndSaveVerificationToken(user.id);
 
-
-    await prisma.verificationToken.create({
-        data: {
-            token,
-            userId: user.id,
-            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24)
-        }
-    })
-
-    await sendVerificationEmail({
-        email: user.email, token
-    })
+    await sendVerificationEmail({ email: user.email, token });
 
     return {
         id: user.id,
@@ -121,42 +150,40 @@ export async function registerUser({
         email: user.email,
         verifiedAt: user.verifiedAt,
         createdAt: user.createdAt
-    }
+    };
 }
 
 
 export async function loginUser({ email, password }: LoginUserInput): Promise<LoginUserResponse> {
-    email = email.trim().toLowerCase()
-    password = password
+    email = sanitizeEmail(email);
 
-    const existingUser = await prisma.user.findUnique({
-        where: {
-            email,
-        },
-    })
-    if (!existingUser) {
-        throw new InvalidCredentialsError("Invaliid credentials")
+    const user = await prisma.user.findUnique({ where: { email } });
+    
+    if (!user) {
+        throw new InvalidCredentialsError("Invaliid credentials");
     }
-    if (!existingUser.password && existingUser.googleId) {
-        throw new OAuthAccountRequiredError("This account uses Google Sign-In. Please log in with Google.");
-    }
-    const isEqual = await verifyPassword(password, existingUser?.password || '')
+    
+    validateLocalAuthAllowed(user, "This account uses Google Sign-In. Please log in with Google.");
+    
+    const isEqual = await verifyPassword(password, user?.password || '');
     if (!isEqual) {
-        throw new InvalidCredentialsError("Invaliid credentials")
+        throw new InvalidCredentialsError("Invaliid credentials");
     }
-    const verificationDate = existingUser.verifiedAt
-    if (!verificationDate) {
-        throw new UserNotVerifiedError('User not verified his/her email')
+    
+    if (!user.verifiedAt) {
+        throw new UserNotVerifiedError('User not verified his/her email');
     }
-    const jwtToken = generateJWTToken(existingUser.id)
+    
+    const jwtToken = generateJWTToken(user.id);
+    
     return {
         accessToken: jwtToken,
         user: {
-            id: existingUser.id,
-            username: existingUser.username,
-            email: existingUser.email
+            id: user.id,
+            username: user.username,
+            email: user.email
         }
-    }
+    };
 }
 
 
@@ -164,183 +191,99 @@ export async function loginUser({ email, password }: LoginUserInput): Promise<Lo
 
 export async function verifyEmail({ token }: VerifyEmailInput): Promise<VerifyEmailResponse> {
     const existingToken = await prisma.verificationToken.findFirst({
-        where: {
-            token
-        }
-    }
-    )
+        where: { token }
+    });
+    
     if (!existingToken) {
-        throw new TokenDoesNotExistError('Token does not exist')
-
+        throw new TokenDoesNotExistError('Token does not exist');
     }
-    const currentTime = new Date()
-    if (!(existingToken.expiresAt > currentTime))
-        throw new TokenExpiredError("Token expired")
-    const correspondingUserId = existingToken.userId
-    const correspondingUser = await prisma.user.findUnique({
-        where: {
-            id: correspondingUserId
-        }
-    })
-    if (!correspondingUser) {
-        throw new UserNotFoundError("User not found")
+    
+    if (!(existingToken.expiresAt > new Date())) {
+        throw new TokenExpiredError("Token expired");
     }
+        
+    const user = await prisma.user.findUnique({
+        where: { id: existingToken.userId }
+    });
+    
+    if (!user) {
+        throw new UserNotFoundError("User not found");
+    }
+    
     await prisma.user.update({
-        where: {
-            id: correspondingUser.id
-        },
-        data: {
-            verifiedAt: new Date()
-        }
-    })
+        where: { id: user.id },
+        data: { verifiedAt: new Date() }
+    });
+    
     await prisma.verificationToken.delete({
-        where: {
-            token
-        }
-    })
+        where: { token }
+    });
 
-    return {
-        success: true
-    }
-
+    return { success: true };
 }
 
 
 export async function resendVerificationEmail({ email }: ResendVerificationInput): Promise<ResendVerificationResponse> {
-
-
-    email = email.trim().toLowerCase()
-    const existingUser = await prisma.user.findUnique({
-        where: {
-            email
-        }
-    })
-    if (!existingUser) {
-        throw new UserNotFoundError("user does not exist")
+    email = sanitizeEmail(email);
+    
+    const user = await prisma.user.findUnique({ where: { email } });
+    
+    if (!user) {
+        throw new UserNotFoundError("user does not exist");
     }
-    if (!existingUser.password && existingUser.googleId) {
-        throw new OAuthAccountRequiredError("This account uses Google Sign-In and is already verified.");
+    
+    validateLocalAuthAllowed(user, "This account uses Google Sign-In and is already verified.");
+    
+    if (user.verifiedAt) {
+        throw new AlreadyVerifiedError("email already verified");
     }
-    const isNotVerified = !(existingUser.verifiedAt)
-    if (!isNotVerified) {
-        throw new AlreadyVerifiedError("email already verified")
-    }
+    
     const latestToken = await prisma.verificationToken.findFirst({
-        where: {
-            userId: existingUser.id
-        },
-        orderBy: {
-            createdAt: "desc"
-        }
-    })
-    const fiveMinutes = 5 * 60 * 1000
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" }
+    });
+    
+    validateTokenRateLimit(latestToken?.createdAt, "Please wait before requesting another email");
 
-    if (
-        latestToken &&
-        Date.now() - latestToken.createdAt.getTime() < fiveMinutes
-    ) {
-        throw new Error("Please wait before requesting another email")
-    }
-
-    await prisma.verificationToken.deleteMany({
-        where: {
-            userId: existingUser.id
-        }
-    })
-
-    const token = generateVerificationToken()
-
-    await prisma.verificationToken.create({
-        data: {
-            token,
-            userId: existingUser.id,
-            expiresAt: new Date(
-                Date.now() + 1000 * 60 * 60 * 24
-            )
-        }
-    })
-
+    const token = await generateAndSaveVerificationToken(user.id);
 
     await sendVerificationEmail({
-        email: existingUser.email,
+        email: user.email,
         token
-    })
+    });
 
-    return {
-        success: true
-    }
-
+    return { success: true };
 }
 
 
 
 
-export async function forgotPassword({
-    email
-}: ForgotPasswordInput): Promise<ForgotPasswordResponse> {
+export async function forgotPassword({ email }: ForgotPasswordInput): Promise<ForgotPasswordResponse> {
+    email = sanitizeEmail(email);
 
-    email = email.trim().toLowerCase()
+    const user = await prisma.user.findUnique({ where: { email } });
 
-    const existingUser = await prisma.user.findUnique({
-        where: {
-            email
-        }
-    })
-
-    if (!existingUser) {
-        return {
-            success: true
-        }
+    if (!user) {
+        return { success: true };
     }
-    if (!existingUser.password && existingUser.googleId) {
-        throw new OAuthAccountRequiredError("This account uses Google Sign-In. Password reset is not available.");
-    }
+    
+    validateLocalAuthAllowed(user, "This account uses Google Sign-In. Password reset is not available.");
+    
     const latestToken = await prisma.passwordResetToken.findFirst({
-        where: {
-            userId: existingUser.id
-        },
-        orderBy: {
-            createdAt: "desc"
-        }
-    })
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" }
+    });
 
-    const fiveMinutes = 5 * 60 * 1000
+    validateTokenRateLimit(latestToken?.createdAt, "Please wait before requesting another password reset email");
 
-    if (
-        latestToken &&
-        Date.now() - latestToken.createdAt.getTime() < fiveMinutes
-    ) {
-        throw new Error(
-            "Please wait before requesting another password reset email"
-        )
-    }
-
-    await prisma.passwordResetToken.deleteMany({
-        where: {
-            userId: existingUser.id
-        }
-    })
-
-    const token = generatePasswordResetToken()
-
-    await prisma.passwordResetToken.create({
-        data: {
-            token,
-            userId: existingUser.id,
-            expiresAt: new Date(
-                Date.now() + 1000 * 60 * 60 * 24
-            )
-        }
-    })
+    const token = await generateAndSavePasswordResetToken(user.id);
 
     await sendPasswordResetEmail({
-        email: existingUser.email,
+        email: user.email,
         token
-    })
+    });
 
-    return {
-        success: true
-    }
+    return { success: true };
 }
 
 export async function resetPassword({
@@ -348,48 +291,36 @@ export async function resetPassword({
     newPassword
 }: ResetPasswordInput): Promise<ResetPasswordResponse> {
 
-
     const existingToken = await prisma.passwordResetToken.findFirst({
         where: { token },
-    })
+    });
 
     if (!existingToken) {
-        throw new InvalidGoogleTokenError("Invalid token")
-
+        throw new InvalidGoogleTokenError("Invalid token");
     }
 
-    const expiryTime = existingToken.expiresAt
-    const isValid = expiryTime > (new Date())
-    if (!isValid) {
-        throw new TokenExpiredError('Token expired')
+    if (existingToken.expiresAt <= new Date()) {
+        throw new TokenExpiredError('Token expired');
     }
-    const newHashedPassword = await hashPassword(newPassword)
+    
+    const newHashedPassword = await hashPassword(newPassword);
 
-    const existingUserId = existingToken.userId
+    const userId = existingToken.userId;
 
-    if (!existingUserId) {
-        throw new UserNotFoundError("user not found")
+    if (!userId) {
+        throw new UserNotFoundError("user not found");
     }
 
     await prisma.user.update({
-        where: {
-            id: existingUserId
-        },
-        data: {
-            password: newHashedPassword
-        }
-    })
+        where: { id: userId },
+        data: { password: newHashedPassword }
+    });
 
     await prisma.passwordResetToken.delete({
-        where: {
-            token: token
-        }
-    })
+        where: { token: token }
+    });
 
-    return {
-        success: true
-    }
-
+    return { success: true };
 }
 
 

@@ -13,7 +13,6 @@ import {
     registerUser,
     loginUser,
     verifyEmail,
-    resendVerificationEmail,
     forgotPassword,
     resetPassword
 } from "./auth.service";
