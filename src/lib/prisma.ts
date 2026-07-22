@@ -11,8 +11,6 @@ const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL!
 });
 
-console.log("[DEBUG Prisma Init] URL:", process.env.DATABASE_URL?.split('@')[1]);
-
 const prisma =
     globalForPrisma.prisma ??
     new PrismaClient({

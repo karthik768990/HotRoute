@@ -1,6 +1,7 @@
 import prisma from "../prisma";
 import { hashPassword, verifyPassword } from "../auth/password";
 import { OAuthAccountRequiredError } from "../auth/google/helpers/google.errors";
+import { UserAlreadyExistsError, UserNotFoundError, InvalidCredentialsError } from "../projects/helpers/project.errors";
 
 interface UpdateUserProfileInput {
     userId: string;
@@ -16,7 +17,7 @@ export async function updateUserProfile({ userId, username, email }: UpdateUserP
         // check if email is taken
         const existing = await prisma.user.findUnique({ where: { email: data.email } });
         if (existing && existing.id !== userId) {
-            throw new Error("Email already registered");
+            throw new UserAlreadyExistsError("Email already registered");
         }
     }
 
@@ -40,16 +41,15 @@ interface UpdateUserPasswordInput {
 
 export async function updateUserPassword({ userId, currentPassword, newPassword }: UpdateUserPasswordInput) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new Error("User not found");
+    if (!user) throw new UserNotFoundError("User not found");
     if (!user.password) {
         if (user.googleId) {
              throw new OAuthAccountRequiredError("This account uses Google Sign-In and does not have a password to update.");
         }
-        // Fallback just in case they have no password and no Google ID (won't happen, but safe)
-        throw new Error("No password is set for this account.");
+        throw new OAuthAccountRequiredError("No password is set for this account.");
     }
     const isMatch = await verifyPassword(currentPassword, user.password);
-    if (!isMatch) throw new Error("Incorrect current password");
+    if (!isMatch) throw new InvalidCredentialsError("Incorrect current password");
 
     const newHashedPassword = await hashPassword(newPassword);
     
