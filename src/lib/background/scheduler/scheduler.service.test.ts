@@ -6,7 +6,8 @@ import prisma from "../../prisma";
 
 vi.mock("../../prisma", () => ({
     default: {
-        $queryRaw: vi.fn()
+        $queryRaw: vi.fn(),
+        $disconnect: vi.fn()
     }
 }));
 

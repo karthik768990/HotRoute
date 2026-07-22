@@ -10,7 +10,7 @@ export async function getProjectDashboard({projectId}:GetProjectDashboardInput):
     const [uptime, averageResponseTime, failures, history] = await Promise.all([
         calculateUptimePercentage({ projectId, skipValidation: true }),
         calculateAverageResponseTime({ projectId, skipValidation: true }),
-        getRecentFailures({ projectId, skipValidation: true }),
+        getRecentFailures({ projectId, skipValidation: true }), // the reason for skipping is we only allow the user after the checks are done so no user without validation will be allowed to run this function 
         getPingHistory({ projectId, skipValidation: true })
     ]);
     const recentHistory = getRecentHistory({history})

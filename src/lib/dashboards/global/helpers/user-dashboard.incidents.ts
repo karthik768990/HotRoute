@@ -1,8 +1,28 @@
-import { getGlobalRecentFailures } from "../../../analytics/analytics.service";
+import prisma from "../../../prisma";
 import { RecentIncident } from "../user-dashboard.types";
 
 export async function getRecentIncidents(userId: string): Promise<RecentIncident[]> {
-    const failedLogs = await getGlobalRecentFailures(userId);
+    const failedLogs = await prisma.pingLog.findMany({
+        where: {
+            success: false,
+            project: {
+                userId: userId
+            }
+        },
+        select: {
+            projectId: true,
+            statusCode: true,
+            errorMessage: true,
+            createdAt: true,
+            project: {
+                select: {
+                    name: true
+                }
+            }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+    });
 
     return failedLogs.map(log => ({
         projectId: log.projectId,

@@ -1,13 +1,14 @@
 import { GetUserDashboardInput, GetUserDashboardOutput } from "./user-dashboard.types";
-import { getProjectsForUser, buildProjectOverview } from "./helpers/user-dashboard.projects";
+import { getProjectOverviewsForUser } from "./helpers/user-dashboard.projects";
 import { getRecentIncidents } from "./helpers/user-dashboard.incidents";
 import { buildUserDashboardSummary } from "./helpers/user-dashboard.summary";
+import { validateUser } from "../../projects/user.validation";
 
 export async function getUserDashboard({ userId }: GetUserDashboardInput): Promise<GetUserDashboardOutput> {
-    const rawProjects = await getProjectsForUser({ userId });
+    await validateUser(userId);
 
     const [projects, recentIncidents] = await Promise.all([
-        buildProjectOverview(rawProjects),
+        getProjectOverviewsForUser(userId),
         getRecentIncidents(userId)
     ]);
 

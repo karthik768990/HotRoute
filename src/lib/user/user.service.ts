@@ -45,7 +45,7 @@ export async function updateUserPassword({ userId, currentPassword, newPassword 
         if (user.googleId) {
              throw new OAuthAccountRequiredError("This account uses Google Sign-In and does not have a password to update.");
         }
-        // Fallback just in case they have no password and no Google ID (shouldn't happen, but safe)
+        // Fallback just in case they have no password and no Google ID (won't happen, but safe)
         throw new Error("No password is set for this account.");
     }
     const isMatch = await verifyPassword(currentPassword, user.password);

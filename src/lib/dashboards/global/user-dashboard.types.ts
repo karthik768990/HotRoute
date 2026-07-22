@@ -1,11 +1,7 @@
 import { DashboardStatus } from "../project/dashboard.types"
 
-export interface GetProjectsForUserInput{
-    userId : string
-}
-
 export interface GetUserDashboardInput {
-    userId: string
+    userId: string;
 }
 
 export interface ProjectOverview {

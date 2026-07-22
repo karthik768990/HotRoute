@@ -1,35 +1,53 @@
-import { listProjects } from "../../../projects/project.service";
-import { Project } from "../../../../generated/prisma/browser";
-import { GetProjectsForUserInput, ProjectOverview } from "../user-dashboard.types";
-import { calculateUptimePercentage, calculateAverageResponseTime, getPingHistory } from "../../../analytics/analytics.service";
-import { determineCurrentStatus } from "../../project/helpers/dashboard.service.helper";
+import prisma from "../../../prisma";
+import { ProjectOverview } from "../user-dashboard.types";
 
+export async function getProjectOverviewsForUser(userId: string): Promise<ProjectOverview[]> {
+    const rawOverviews = await prisma.$queryRaw<
+        Array<{
+            projectId: string;
+            projectName: string;
+            active: boolean;
+            status: 'UP' | 'DOWN' | 'UNKNOWN';
+            uptimePercentage: number;
+            averageResponseTime: number;
+            lastPingAt: Date | null;
+        }>
+    >`
+        SELECT 
+            p.id AS "projectId",
+            p.name AS "projectName",
+            p.active AS "active",
+            COALESCE(latest_log.status, 'UNKNOWN') AS "status",
+            COALESCE(
+                ROUND(
+                    (COUNT(pl.id) FILTER (WHERE pl.success = true)::numeric / NULLIF(COUNT(pl.id), 0)::numeric) * 100, 
+                    2
+                )::float, 
+                0
+            ) AS "uptimePercentage",
+            COALESCE(
+                ROUND(
+                    AVG(pl."responseTime") FILTER (WHERE pl.success = true)::numeric, 
+                    2
+                )::float, 
+                0
+            ) AS "averageResponseTime",
+            COALESCE(latest_log."createdAt", p."lastPingAt") AS "lastPingAt"
+        FROM "Project" p
+        LEFT JOIN "PingLog" pl ON pl."projectId" = p.id
+        LEFT JOIN LATERAL (
+            SELECT 
+                CASE WHEN success THEN 'UP' ELSE 'DOWN' END AS status,
+                "createdAt"
+            FROM "PingLog"
+            WHERE "projectId" = p.id
+            ORDER BY "createdAt" DESC
+            LIMIT 1
+        ) latest_log ON true
+        WHERE p."userId" = ${userId}
+        GROUP BY p.id, p.name, p.active, p."createdAt", latest_log.status, latest_log."createdAt", p."lastPingAt"
+        ORDER BY p."createdAt" DESC;
+    `;
 
-export async function getProjectsForUser({userId}:GetProjectsForUserInput):Promise<Project[]>{
-    return await listProjects({ userId });
-}
-
-export async function buildProjectOverview(projects: Project[]): Promise<ProjectOverview[]> {
-    return Promise.all(
-        projects.map(async (project) => {
-            const [uptimePercentage, averageResponseTime, pingHistory] = await Promise.all([
-                calculateUptimePercentage({ projectId: project.id, skipValidation: true }),
-                calculateAverageResponseTime({ projectId: project.id, skipValidation: true }),
-                getPingHistory({ projectId: project.id, skipValidation: true })
-            ]);
-
-            const status = determineCurrentStatus(pingHistory);
-            const lastPingAt = pingHistory.length > 0 ? pingHistory[0].createdAt : null;
-
-            return {
-                projectId: project.id,
-                projectName: project.name,
-                active: project.active,
-                status,
-                uptimePercentage,
-                averageResponseTime,
-                lastPingAt
-            };
-        })
-    );
+    return rawOverviews;
 }
