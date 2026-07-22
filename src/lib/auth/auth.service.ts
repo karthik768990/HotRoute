@@ -110,7 +110,7 @@ async function generateAndSavePasswordResetToken(userId: string): Promise<string
         data: {
             token,
             userId,
-            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24)
+            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24) //24 hours validity
         }
     });
     

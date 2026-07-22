@@ -23,8 +23,7 @@ function generateExpiry(hours: number, currentTime: Date): Date {
 }
 
 function  isTokenExpired(expiresAt:Date): boolean{
-    const currentTime = new Date()
-    return currentTime>expiresAt
+    return new Date()>expiresAt
 }
 
 

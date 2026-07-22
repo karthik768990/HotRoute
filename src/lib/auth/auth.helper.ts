@@ -4,6 +4,15 @@ import prisma from "../prisma";
 import { verifyToken } from "./jwt";
 
 
+
+
+export async function requireAuthenticatedUser(request: Request): Promise<User> {
+    const user = await getAuthenticatedUser(request)
+    if (user === null) throw new AuthenticationRequiredError("User authentication required")
+
+    return user
+}
+
 export async function getAuthenticatedUser(request: Request): Promise<User | null> {
 
     try {
@@ -25,12 +34,6 @@ export async function getAuthenticatedUser(request: Request): Promise<User | nul
 }
 
 
-export async function requireAuthenticatedUser(request: Request): Promise<User> {
-    const user = await getAuthenticatedUser(request)
-    if (user === null) throw new AuthenticationRequiredError("User authentication required")
-
-    return user
-}
 
 interface RequireAuthorizedProjectInput {
     userId: string,
