@@ -22,14 +22,26 @@ export class WorkerService implements QueueListener {
     }
 
     async processNextJob(): Promise<void> {
-        try {
-            const job = await this.queue.dequeue()
-            if (!job) return;
+        if (this.processing) return;
+        this.processing = true;
 
-            await this.performPingFn({ projectId: job.projectId })
-            return;
+        try {
+            while (true) {
+                const job = await this.queue.leaseJob(this.workerId);
+                if (!job) break;
+
+                try {
+                    await this.performPingFn({ projectId: job.projectId });
+                    await this.queue.ackJob(job.jobId, this.workerId);
+                } catch (jobError) {
+                    console.error(`Job ${job.jobId} failed: ${jobError instanceof Error ? jobError.message : String(jobError)}`);
+                    // Note: Intentionally not acknowledging so the lease expires
+                }
+            }
         } catch (error) {
-            console.error(`Error :${error instanceof Error ? error.message : String(error)}`)
+            console.error(`Worker error: ${error instanceof Error ? error.message : String(error)}`);
+        } finally {
+            this.processing = false;
         }
     }
 }

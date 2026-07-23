@@ -165,10 +165,10 @@ describe('worker-pool module', () => {
             expect(pingService.performPing).toHaveBeenCalledTimes(3);
             
             // Verify our worker caught the error properly
-            expect(consoleErrorSpy).toHaveBeenCalledWith("Error :Ping failed");
+            expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("failed: Ping failed"));
             
-            // FIXED: Added await here
-            expect(await queue.size()).toBe(0);
+            // FIXED: The failed job will NOT be acked and removed immediately, it will stay in the queue
+            expect(await queue.size()).toBe(1);
         });
 
     });

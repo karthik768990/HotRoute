@@ -222,13 +222,19 @@ WHERE "active" = true
   );
 ```
 
-### 2. Queue Decoupling (`queue.memory.ts`)
-Due project IDs are pushed into `InMemoryQueue`. This abstraction decouples scheduler polling cycles from job execution and provides a clean interface for future distributed queue implementations (e.g., Redis/BullMQ).
+### 2. Reliable Queue Architecture (`queue.memory.ts`)
+Due project IDs are pushed into `InMemoryQueue`. The queue now implements a robust lease-and-acknowledgement model for reliable job delivery:
+- **Lease-based Delivery**: Workers do not permanently dequeue jobs. Instead, they "lease" a job for a configurable timeout (e.g. 100 seconds).
+- **ACK Semantics & At-least-once Delivery**: Jobs are only removed from the queue when a worker explicitly acknowledges (`ACK`) successful execution.
+- **Worker Crash Recovery**: If a worker crashes before ACKing, its lease eventually expires, and another worker can pick up the job, guaranteeing execution.
+- **Concurrency Guarantees**: Leasing is atomic. A job can only be leased by one worker at any given time.
+- **Dead-Letter Queue (DLQ) & Retry Policy**: If a job repeatedly fails or leases expire past `MAX_RETRIES` (5), the job is moved into an inspectable Dead-Letter Queue for manual review and requeuing.
 
 ### 3. Asynchronous Worker Pool Execution (`worker-pool.ts` & `ping.service.ts`)
-- Worker threads dequeue project IDs and execute HTTP health checks using Node's high-throughput `undici` client.
+- Worker threads lease project IDs and execute HTTP health checks using Node's high-throughput `undici` client.
 - The response time (in milliseconds), HTTP status code, and success flag are recorded in a new `PingLog` entry.
 - The `Project.lastPingAt` timestamp is updated in PostgreSQL.
+- Only upon successful execution does the worker `ACK` the queue to permanently clear the job.
 
 ---
 
